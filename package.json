@@ -1,0 +1,82 @@
+{
+  "name": "@duplojs/json-web-token",
+  "version": "0.0.0",
+  "author": {
+    "name": "ZeRiix",
+    "url": "https://github.com/ZeRiix"
+  },
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duplojs/json-web-token.git"
+  },
+  "scripts": {
+    "build": "rollup --config",
+    "docs:dev": "npm -w docs run docs:dev",
+    "docs:build": "npm -w docs run docs:build",
+    "docs:preview": "npm -w docs run docs:preview",
+    "test:tu": "vitest --coverage",
+    "test:tu:bench": "vitest bench",
+    "test:tu:watch": "vitest --coverage --watch",
+    "test:tu:update": "vitest --coverage --update",
+    "test:types": "tsc -p tsconfig.test.json && npm -w docs run test:types",
+    "test:lint": "eslint --quiet",
+    "test:lint:fix": "eslint --fix --quiet",
+    "prepare": "husky"
+  },
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./signed": {
+      "import": "./dist/signed/index.mjs",
+      "require": "./dist/signed/index.cjs",
+      "types": "./dist/signed/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {
+    "@duplojs/server-utils": ">=0.2.3 <1.0.0",
+    "@duplojs/utils": ">=1.5.15 <2.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-conventional": "19.8.1",
+    "@duplojs/dev-tools": "0.2.0",
+    "@duplojs/eslint": "0.5.0",
+    "@rollup/plugin-typescript": "12.3.0",
+    "@types/node": "24.3.0",
+    "@vitest/coverage-istanbul": "3.2.4",
+    "eslint": "9.34.0",
+    "husky": "9.1.7",
+    "rollup": "4.50.0",
+    "rollup-plugin-delete": "3.0.1",
+    "rollup-plugin-esbuild": "6.2.1",
+    "rollup-plugin-tsc-alias": "1.1.4",
+    "tslib": "2.8.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.3",
+    "vite-tsconfig-paths": "5.1.4",
+    "vitest": "3.2.4"
+  },
+  "workspaces": [
+    "integration",
+    "docs"
+  ],
+  "keywords": [
+    "json-web-token",
+    "auth",
+    "duplojs"
+  ],
+  "engines": {
+    "node": ">=22.15.1"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "integration",
+  "dependencies": {
+    "@duplojs/json-web-token": "file:.."
+  }
+}
