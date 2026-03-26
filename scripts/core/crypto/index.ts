@@ -1,1 +1,2 @@
-export * as HMAC from "./hmac";
+export * from "./asymmetric";
+export * from "./symmetric";

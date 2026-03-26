@@ -1,9 +1,9 @@
 import { encodeBase64, decodeBase64 } from "./base64";
 import { encodeText, decodeText } from "./text";
 
-export function decodeBase64Url(input: Uint8Array | string): Uint8Array {
+export function decodeBase64Url(input: Uint8Array | ArrayBuffer | string) {
 	let encoded = input;
-	if (encoded instanceof Uint8Array) {
+	if (encoded instanceof Uint8Array || encoded instanceof ArrayBuffer) {
 		encoded = decodeText(encoded);
 	}
 	encoded = encoded
@@ -13,7 +13,7 @@ export function decodeBase64Url(input: Uint8Array | string): Uint8Array {
 	return decodeBase64(encoded);
 }
 
-export function encodeBase64Url(input: Uint8Array | string): string {
+export function encodeBase64Url(input: Uint8Array | ArrayBuffer | string) {
 	let unencoded = input;
 	if (typeof unencoded === "string") {
 		unencoded = encodeText(unencoded);

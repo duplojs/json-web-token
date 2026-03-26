@@ -1,12 +1,9 @@
-import { unwrap, type D, type DP, DPE, E, type Kind, type SimplifyTopLevel, A } from "@duplojs/utils";
-import { HMAC, decodeBase64Url, decodeText, encodeBase64Url, jsonParse } from "@scripts/core";
+import { D, unwrap, type DP, DPE, E, type Kind, type SimplifyTopLevel, A, type IsEqual } from "@duplojs/utils";
+import { decodeBase64Url, decodeText, encodeBase64Url, jsonParse } from "@scripts/core";
 import { createJsonWebTokenKind } from "@scripts/kind";
+import type { Signer } from "./signer";
 
 const clientConfigDataParser = DPE.object({
-	algorithm: DPE.literal(["HS256", "HS512"]),
-	signingKey: DPE.string(),
-	// anticipation asymmetric algo
-	verifyKey: DPE.string().optional(),
 	issuer: DPE.string().optional(),
 	audience: DPE.union([
 		DPE.string(),
@@ -17,25 +14,39 @@ const clientConfigDataParser = DPE.object({
 	maxAge: DPE.time().optional(),
 });
 
-export type ClientConfig = SimplifyTopLevel<DPE.Output<typeof clientConfigDataParser> & { now?(): D.TheDate }>;
+export type ClientConfig<
+	GenericAlgorithm extends string = string,
+> = SimplifyTopLevel<
+	& {
+		now?(): D.TheDate;
+		signer: Signer<GenericAlgorithm>;
+	}
+	& DPE.Output<typeof clientConfigDataParser>
+>;
+
+type UnknownToUndefined<
+	GenericValue extends unknown,
+> = IsEqual<GenericValue, unknown> extends true
+	? undefined
+	: GenericValue;
 
 export interface DecodeOutput<
 	GenericClientConfig extends ClientConfig,
-	GenericCustomHeader extends Record<string, unknown>,
 	GenericCustomPayload extends Record<string, unknown>,
+	GenericCustomHeader extends Record<string, unknown>,
 > {
 	readonly header: SimplifyTopLevel<
 	{
 		readonly typ: "JWT";
-		readonly alg: GenericClientConfig["algorithm"];
+		readonly alg: GenericClientConfig["signer"]["algorithm"];
 	}
 	& Readonly<GenericCustomHeader>
 	>;
 	readonly payload: SimplifyTopLevel<
 	{
-		readonly iss: GenericClientConfig["issuer"];
-		readonly sub: GenericClientConfig["subject"];
-		readonly aud: GenericClientConfig["audience"];
+		readonly iss: UnknownToUndefined<GenericClientConfig["issuer"]>;
+		readonly sub: UnknownToUndefined<GenericClientConfig["subject"]>;
+		readonly aud: UnknownToUndefined<GenericClientConfig["audience"]>;
 		readonly exp: number;
 		readonly iat: number;
 	}
@@ -45,11 +56,11 @@ export interface DecodeOutput<
 
 export interface Methods<
 	GenericClientConfig extends ClientConfig = ClientConfig,
-	GenericCustomHeader extends Record<string, unknown> = {},
 	GenericCustomPayload extends Record<string, unknown> = {},
+	GenericCustomHeader extends Record<string, unknown> = {},
 > {
 	verify(token: string):
-		| Promise<SimplifyTopLevel<DecodeOutput<GenericClientConfig, GenericCustomHeader, GenericCustomPayload>>>
+		| Promise<SimplifyTopLevel<DecodeOutput<GenericClientConfig, GenericCustomPayload, GenericCustomHeader>>>
 		| E.Left<"decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
 		| E.Left<"payload-parse-error", DP.DataParserError>
@@ -59,7 +70,7 @@ export interface Methods<
 		| E.Left<"audience-invalid">
 		| E.Left<"expired">;
 	decode(token: string):
-		| SimplifyTopLevel<DecodeOutput<GenericClientConfig, GenericCustomHeader, GenericCustomPayload>>
+		| SimplifyTopLevel<DecodeOutput<GenericClientConfig, GenericCustomPayload, GenericCustomHeader>>
 		| E.Left<"decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
 		| E.Left<"payload-parse-error", DP.DataParserError>;
@@ -78,26 +89,26 @@ export type Client<
 const tokenSplitRegex = /^(.+)\.([^.]+)$/;
 
 function nowInSeconds(config: ClientConfig) {
-	const now = config.now?.() ?? new Date();
+	const now = config.now?.() ?? D.now();
 
-	return Math.floor(now.getTime() / 1000);
+	return Math.floor(D.toTimestamp(now) / 1000);
 }
 
 function getExpirationInSeconds(config: ClientConfig, issuedAt: number) {
-	const maxAge = config.maxAge?.toNative();
-
-	return typeof maxAge === "number"
-		? issuedAt + Math.floor(maxAge / 1000)
-		: Number.MAX_SAFE_INTEGER;
+	return config.maxAge
+		? issuedAt + D.computeTime(config.maxAge, "second")
+		: D.maxTimeValue;
 }
 
 function getToleranceInSeconds(config: ClientConfig) {
-	return Math.floor((config.tolerance?.toNative() ?? 0) / 1000);
+	return config.tolerance
+		? D.computeTime(config.tolerance, "second")
+		: 0;
 }
 
 function isAudienceValid(
-	expectedAudience: ClientConfig["audience"],
-	tokenAudience: ClientConfig["audience"],
+	expectedAudience: string | string[] | undefined,
+	tokenAudience: string | string[] | undefined,
 ) {
 	if (typeof expectedAudience === "undefined") {
 		return true;
@@ -115,22 +126,40 @@ function isAudienceValid(
 	);
 }
 
-export function factory<
+declare const SymbolErrorForbidden: unique symbol;
+
+export type ForbiddenDataParser<
+	GenericDataParserShape extends DP.DataParserObjectShape,
+> = DP.Contain<
+	DP.DataParserObject<
+		SimplifyTopLevel<
+			& Omit<DP.DataParserDefinitionObject, "shape">
+			& {
+				readonly shape: GenericDataParserShape;
+			}
+		>
+	>,
+	DP.DataParserBigInt
+> extends true
+	? { [SymbolErrorForbidden]: "Consists of a prohibited data parser." }
+	: GenericDataParserShape;
+
+export function createClient<
 	GenericClientConfig extends ClientConfig,
+	GenericCustomPayload extends DP.DataParserObjectShape,
 	GenericCustomHeader extends DP.DataParserObjectShape = {},
-	GenericCustomPayload extends DP.DataParserObjectShape = {},
 >(
 	params: {
 		readonly config: GenericClientConfig;
-		readonly customPayloadShape: GenericCustomPayload;
-		readonly customHeaderShape?: GenericCustomHeader;
+		readonly customPayloadShape: GenericCustomPayload & ForbiddenDataParser<GenericCustomPayload>;
+		readonly customHeaderShape?: GenericCustomHeader & ForbiddenDataParser<GenericCustomHeader>;
 	},
 ):
 	| Client<
 		Methods<
 			GenericClientConfig,
-			DP.DataParserObjectShapeOutput<GenericCustomHeader>,
-			DP.DataParserObjectShapeOutput<GenericCustomPayload>
+			DP.DataParserObjectShapeOutput<GenericCustomPayload>,
+			DP.DataParserObjectShapeOutput<GenericCustomHeader>
 		>>
 	| E.Left<"config-invalid", DP.DataParserError> {
 	const configResult = clientConfigDataParser.parse(params.config);
@@ -139,11 +168,15 @@ export function factory<
 		return E.left("config-invalid", unwrap(configResult));
 	}
 
-	const parsedConfig = unwrap(configResult);
+	const config = {
+		...unwrap(configResult),
+		now: params.config.now,
+		signer: params.config.signer,
+	} as GenericClientConfig;
 
 	const headerParser = DPE.object({
 		typ: DPE.literal(["JWT"]),
-		alg: DPE.literal([parsedConfig.algorithm]),
+		alg: DPE.literal(config.signer.algorithm),
 		...(params.customHeaderShape ?? {}),
 	});
 	const payloadParser = DPE.object({
@@ -157,10 +190,11 @@ export function factory<
 		iat: DPE.number(),
 		...params.customPayloadShape,
 	});
+
 	type DecodedTokenOutput = DecodeOutput<
 		GenericClientConfig,
-		DP.DataParserObjectShapeOutput<GenericCustomHeader>,
-		DP.DataParserObjectShapeOutput<GenericCustomPayload>
+		DP.DataParserObjectShapeOutput<GenericCustomPayload>,
+		DP.DataParserObjectShapeOutput<GenericCustomHeader>
 	> & {
 		signature: string;
 		signingInput: string;
@@ -209,8 +243,52 @@ export function factory<
 			header: unwrap(headerResult),
 			payload: unwrap(payloadResult),
 			signature: matchResult[2]!,
-			signingInput: matchResult[1]!,
+			content: matchResult[1]!,
 		} as unknown as DecodedTokenOutput;
+	};
+
+	const verifyFlow = (
+		decodeResult: DecodedTokenOutput,
+		isValid: boolean,
+	) => {
+		if (!isValid) {
+			return E.left("signature-invalid");
+		}
+
+		if (
+			typeof config.issuer !== "undefined"
+			&& decodeResult.payload.iss !== config.issuer
+		) {
+			return E.left("issue-invalid");
+		}
+
+		if (
+			typeof config.subject !== "undefined"
+			&& decodeResult.payload.sub !== config.subject
+		) {
+			return E.left("subject-invalid");
+		}
+
+		if (
+			!isAudienceValid(
+				config.audience,
+				decodeResult.payload.aud,
+			)
+		) {
+			return E.left("audience-invalid");
+		}
+
+		if (
+			(decodeResult.payload.exp + getToleranceInSeconds(config))
+			< nowInSeconds(config)
+		) {
+			return E.left("expired");
+		}
+
+		return {
+			header: decodeResult.header,
+			payload: decodeResult.payload,
+		};
 	};
 
 	return clientKind.setTo(
@@ -219,10 +297,10 @@ export function factory<
 				payload: DP.DataParserObjectShapeOutput<GenericCustomPayload>,
 				header?: DP.DataParserObjectShapeOutput<GenericCustomHeader>,
 			) {
-				const issuedAt = nowInSeconds(parsedConfig);
+				const issuedAt = nowInSeconds(config);
 				const headerResult = headerParser.parse({
 					typ: "JWT",
-					alg: parsedConfig.algorithm,
+					alg: config.signer.algorithm,
 					...(header ?? {}),
 				});
 				if (E.isLeft(headerResult)) {
@@ -230,11 +308,11 @@ export function factory<
 				}
 
 				const payloadResult = payloadParser.parse({
-					iss: parsedConfig.issuer,
-					sub: parsedConfig.subject,
-					aud: parsedConfig.audience,
+					iss: config.issuer,
+					sub: config.subject,
+					aud: config.audience,
 					iat: issuedAt,
-					exp: getExpirationInSeconds(parsedConfig, issuedAt),
+					exp: getExpirationInSeconds(config, issuedAt),
 					...payload,
 				});
 				if (E.isLeft(payloadResult)) {
@@ -244,14 +322,15 @@ export function factory<
 				const encodedHeader = encodeBase64Url(JSON.stringify(unwrap(headerResult)));
 				const encodedPayload = encodeBase64Url(JSON.stringify(unwrap(payloadResult)));
 				const signingInput = `${encodedHeader}.${encodedPayload}`;
+				const signatureResult = config.signer.sign(signingInput);
 
-				return HMAC.sign(
-					signingInput,
-					parsedConfig.signingKey,
-					parsedConfig.algorithm,
-				).then(
-					(signature) => `${signingInput}.${signature}`,
-				);
+				if (signatureResult instanceof Promise) {
+					return signatureResult.then(
+						(signature) => `${signingInput}.${signature}`,
+					);
+				}
+
+				return `${signingInput}.${signatureResult}`;
 			},
 			decode(token: string) {
 				const decodeResult = decodeToken(token);
@@ -272,63 +351,25 @@ export function factory<
 					return decodeResult;
 				}
 
-				const verificationKey = parsedConfig.verifyKey ?? parsedConfig.signingKey;
-
-				return HMAC.verify(
+				const verifyResult = config.signer.verify(
 					decodeResult.signingInput,
 					decodeResult.signature,
-					verificationKey,
-					parsedConfig.algorithm,
-				).then(
-					(isValid) => {
-						if (!isValid) {
-							return E.left("signature-invalid");
-						}
-
-						if (
-							typeof parsedConfig.issuer !== "undefined"
-							&& decodeResult.payload.iss !== parsedConfig.issuer
-						) {
-							return E.left("issue-invalid");
-						}
-
-						if (
-							typeof parsedConfig.subject !== "undefined"
-							&& decodeResult.payload.sub !== parsedConfig.subject
-						) {
-							return E.left("subject-invalid");
-						}
-
-						if (
-							!isAudienceValid(
-								parsedConfig.audience,
-								decodeResult.payload.aud,
-							)
-						) {
-							return E.left("audience-invalid");
-						}
-
-						if (
-							(decodeResult.payload.exp + getToleranceInSeconds(parsedConfig))
-							< nowInSeconds(parsedConfig)
-						) {
-							return E.left("expired");
-						}
-
-						return {
-							header: decodeResult.header,
-							payload: decodeResult.payload,
-						};
-					},
 				);
+
+				if (verifyResult instanceof Promise) {
+					return verifyResult.then(
+						(isValid) => verifyFlow(decodeResult, isValid),
+					);
+				}
+
+				return verifyFlow(decodeResult, verifyResult);
 			},
 		},
 	) as Client<
 		Methods<
 			GenericClientConfig,
-			DP.DataParserObjectShapeOutput<GenericCustomHeader>,
-			DP.DataParserObjectShapeOutput<GenericCustomPayload>
+			DP.DataParserObjectShapeOutput<GenericCustomPayload>,
+			DP.DataParserObjectShapeOutput<GenericCustomHeader>
 		>
 	>;
 }
-

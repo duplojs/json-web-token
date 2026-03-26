@@ -1,4 +1,4 @@
 export * from "./core";
 
-export * as SC from "./signed";
-export * as SignedClient from "./signed";
+export * as ST from "./signed";
+export * as SignedToken from "./signed";
