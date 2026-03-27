@@ -21,5 +21,8 @@
 	
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"typescript.updateImportsOnFileMove.enabled": "prompt",
-  	"javascript.updateImportsOnFileMove.enabled": "prompt"
+	"javascript.updateImportsOnFileMove.enabled": "prompt",
+	"cSpell.words": [
+		"RSAOAEP"
+	]
 }

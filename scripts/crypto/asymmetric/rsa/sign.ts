@@ -1,4 +1,4 @@
-import { encodeBase64Url, encodeText } from "@scripts/core/encoding";
+import { encodeBase64Url, encodeText } from "@scripts/encoding";
 import { hashMapper } from "./hashMapper";
 import type { Algorithm } from "./types";
 
@@ -8,10 +8,10 @@ export async function sign(
 	algorithm: Algorithm,
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
-		"raw",
+		"pkcs8",
 		encodeText(key) as BufferSource,
 		{
-			name: "HMAC",
+			name: "RSASSA-PKCS1-v1_5",
 			hash: hashMapper[algorithm],
 		},
 		false,
@@ -19,7 +19,10 @@ export async function sign(
 	);
 
 	const signature = await globalThis.crypto.subtle.sign(
-		"HMAC",
+		{
+			name: "RSASSA-PKCS1-v1_5",
+			hash: hashMapper[algorithm],
+		},
 		cryptoKey,
 		encodeText(content) as BufferSource,
 	);

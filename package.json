@@ -33,10 +33,15 @@
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     },
-    "./signed": {
-      "import": "./dist/signed/index.mjs",
-      "require": "./dist/signed/index.cjs",
-      "types": "./dist/signed/index.d.ts"
+    "./clients": {
+      "import": "./dist/clients/index.mjs",
+      "require": "./dist/clients/index.cjs",
+      "types": "./dist/clients/index.d.ts"
+    },
+    "./signed-client": {
+      "import": "./dist/clients/signed/index.mjs",
+      "require": "./dist/clients/signed/index.cjs",
+      "types": "./dist/clients/signed/index.d.ts"
     }
   },
   "files": [

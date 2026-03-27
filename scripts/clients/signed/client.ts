@@ -1,5 +1,5 @@
-import { D, unwrap, type DP, DPE, E, type Kind, type SimplifyTopLevel, A, type IsEqual } from "@duplojs/utils";
-import { decodeBase64Url, decodeText, encodeBase64Url, jsonParse } from "@scripts/core";
+import { D, unwrap, type DP, DPE, E, type Kind, type SimplifyTopLevel, A, type IsEqual, kindHeritage } from "@duplojs/utils";
+import { decodeBase64Url, decodeText, encodeBase64Url, jsonParse } from "@scripts/encoding";
 import { createJsonWebTokenKind } from "@scripts/kind";
 import type { Signer } from "./signer";
 
@@ -11,7 +11,7 @@ const clientConfigDataParser = DPE.object({
 	]).optional(),
 	subject: DPE.string().optional(),
 	tolerance: DPE.time().optional(),
-	maxAge: DPE.time().optional(),
+	maxAge: DPE.time(),
 });
 
 export type ClientConfig<
@@ -80,24 +80,26 @@ export interface Methods<
 		| E.Left<"payload-parse-error", DP.DataParserError>;
 }
 
-const clientKind = createJsonWebTokenKind("SignedJwtClient");
+const clientKind = createJsonWebTokenKind("signed-client");
 
 export type Client<
-	GenericMethods extends Methods,
+	GenericMethods extends Methods = Methods,
 > = Kind<typeof clientKind.definition> & GenericMethods;
 
-const tokenSplitRegex = /^(.+)\.([^.]+)$/;
+export class SignedClientWrongConfig extends kindHeritage(
+	"client-wrong-config",
+	clientKind,
+	Error,
+) {
+	public constructor(error: DP.DataParserError) {
+		super({}, ["Signed client config is wrong. Check your definition shape"]);
+	}
+}
 
 function nowInSeconds(config: ClientConfig) {
 	const now = config.now?.() ?? D.now();
 
 	return Math.floor(D.toTimestamp(now) / 1000);
-}
-
-function getExpirationInSeconds(config: ClientConfig, issuedAt: number) {
-	return config.maxAge
-		? issuedAt + D.computeTime(config.maxAge, "second")
-		: D.maxTimeValue;
 }
 
 function getToleranceInSeconds(config: ClientConfig) {
@@ -139,7 +141,8 @@ export type ForbiddenDataParser<
 			}
 		>
 	>,
-	DP.DataParserBigInt
+	| DP.DataParserBigInt
+	| DP.DataParserUnknown
 > extends true
 	? { [SymbolErrorForbidden]: "Consists of a prohibited data parser." }
 	: GenericDataParserShape;
@@ -160,12 +163,11 @@ export function createClient<
 			GenericClientConfig,
 			DP.DataParserObjectShapeOutput<GenericCustomPayload>,
 			DP.DataParserObjectShapeOutput<GenericCustomHeader>
-		>>
-	| E.Left<"config-invalid", DP.DataParserError> {
+		>> {
 	const configResult = clientConfigDataParser.parse(params.config);
 
 	if (E.isLeft(configResult)) {
-		return E.left("config-invalid", unwrap(configResult));
+		throw new SignedClientWrongConfig(unwrap(configResult));
 	}
 
 	const config = {
@@ -195,22 +197,12 @@ export function createClient<
 		GenericClientConfig,
 		DP.DataParserObjectShapeOutput<GenericCustomPayload>,
 		DP.DataParserObjectShapeOutput<GenericCustomHeader>
-	> & {
-		signature: string;
-		signingInput: string;
-	};
+	>;
 
-	const decodeToken = (
-		token: string,
+	const decodeFlow = (
+		encodedHeader: string | undefined,
+		encodedPayload: string | undefined,
 	) => {
-		const matchResult = token.match(tokenSplitRegex);
-
-		if (!matchResult) {
-			return E.left("decode-error");
-		}
-
-		const [encodedHeader, encodedPayload] = matchResult[1]!.split(".");
-
 		if (!encodedHeader || !encodedPayload) {
 			return E.left("decode-error");
 		}
@@ -242,8 +234,6 @@ export function createClient<
 		return {
 			header: unwrap(headerResult),
 			payload: unwrap(payloadResult),
-			signature: matchResult[2]!,
-			content: matchResult[1]!,
 		} as unknown as DecodedTokenOutput;
 	};
 
@@ -312,7 +302,7 @@ export function createClient<
 					sub: config.subject,
 					aud: config.audience,
 					iat: issuedAt,
-					exp: getExpirationInSeconds(config, issuedAt),
+					exp: D.computeTime(config.maxAge, "second") + issuedAt,
 					...payload,
 				});
 				if (E.isLeft(payloadResult)) {
@@ -333,7 +323,9 @@ export function createClient<
 				return `${signingInput}.${signatureResult}`;
 			},
 			decode(token: string) {
-				const decodeResult = decodeToken(token);
+				const [encodedHeader, encodedPayload] = token.split(".");
+
+				const decodeResult = decodeFlow(encodedHeader, encodedPayload);
 
 				if (E.isLeft(decodeResult)) {
 					return decodeResult;
@@ -345,15 +337,21 @@ export function createClient<
 				};
 			},
 			verify(token: string) {
-				const decodeResult = decodeToken(token);
+				const [encodedHeader, encodedPayload, signature] = token.split(".");
+
+				if (!signature) {
+					return E.left("signature-invalid");
+				}
+
+				const decodeResult = decodeFlow(encodedHeader, encodedPayload);
 
 				if (E.isLeft(decodeResult)) {
 					return decodeResult;
 				}
 
 				const verifyResult = config.signer.verify(
-					decodeResult.signingInput,
-					decodeResult.signature,
+					`${encodedHeader}.${encodedPayload}`,
+					signature,
 				);
 
 				if (verifyResult instanceof Promise) {
