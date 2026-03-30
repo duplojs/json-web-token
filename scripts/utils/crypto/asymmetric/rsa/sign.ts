@@ -1,28 +1,31 @@
-import { decodeBase64Url, encodeText } from "@scripts/encoding";
+import { encodeBase64Url, encodeText } from "@scripts/utils";
 import { hashMapper } from "./hashMapper";
 import type { Algorithm } from "./types";
 
-export async function verify(
+export async function sign(
 	content: string,
-	signature: string,
 	key: string,
 	algorithm: Algorithm,
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
-		"raw",
+		"pkcs8",
 		encodeText(key) as BufferSource,
 		{
-			name: "HMAC",
+			name: "RSASSA-PKCS1-v1_5",
 			hash: hashMapper[algorithm],
 		},
 		false,
-		["verify"],
+		["sign"],
 	);
 
-	return globalThis.crypto.subtle.verify(
-		"HMAC",
+	const signature = await globalThis.crypto.subtle.sign(
+		{
+			name: "RSASSA-PKCS1-v1_5",
+			hash: hashMapper[algorithm],
+		},
 		cryptoKey,
-		decodeBase64Url(signature) as BufferSource,
 		encodeText(content) as BufferSource,
 	);
+
+	return encodeBase64Url(signature);
 }

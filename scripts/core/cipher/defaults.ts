@@ -1,4 +1,4 @@
-import { RSA_OAEP } from "@scripts/crypto";
+import { RSA_OAEP } from "@scripts/utils";
 import { cipherFactory } from "./factory";
 
 export interface CreateRSAOAEPCipher {

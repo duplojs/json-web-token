@@ -11,6 +11,14 @@ export interface Cipher<
 	decrypt(element: string): MaybePromise<string>;
 }
 
+export interface CreateCipher<
+	GenericAlgorithm extends string,
+	GenericParams extends unknown,
+> {
+	readonly algorithm: GenericAlgorithm;
+	(params: NoInfer<GenericParams>): Cipher<GenericAlgorithm>;
+}
+
 export function cipherFactory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,
@@ -20,11 +28,17 @@ export function cipherFactory<
 		encrypt(element: string): MaybePromise<string>;
 		decrypt(element: string): MaybePromise<string>;
 	},
-): (params: NoInfer<GenericMethodsParams>) => Cipher<GenericAlgorithm> {
-	return (params) => cipherKind.setTo(
+): CreateCipher<GenericAlgorithm, GenericMethodsParams> {
+	return Object.assign(
+		(params: NoInfer<GenericMethodsParams>) => cipherKind
+			.setTo(
+					{
+						algorithm,
+						...methods(params, algorithm),
+					} satisfies RemoveKind<Cipher>,
+			),
 		{
 			algorithm,
-			...methods(params, algorithm),
-		} satisfies RemoveKind<Cipher<GenericAlgorithm>>,
+		},
 	);
 }

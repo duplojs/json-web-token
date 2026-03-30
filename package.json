@@ -32,16 +32,6 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
-    },
-    "./clients": {
-      "import": "./dist/clients/index.mjs",
-      "require": "./dist/clients/index.cjs",
-      "types": "./dist/clients/index.d.ts"
-    },
-    "./signed-client": {
-      "import": "./dist/clients/signed/index.mjs",
-      "require": "./dist/clients/signed/index.cjs",
-      "types": "./dist/clients/signed/index.d.ts"
     }
   },
   "files": [

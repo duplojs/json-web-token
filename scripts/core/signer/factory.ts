@@ -11,6 +11,14 @@ export interface Signer<
 	verify(content: string, signature: string): MaybePromise<boolean>;
 }
 
+export interface CreateSigner<
+	GenericAlgorithm extends string,
+	GenericParams extends unknown,
+> {
+	readonly algorithm: GenericAlgorithm;
+	(params: NoInfer<GenericParams>): Signer<GenericAlgorithm>;
+}
+
 export function signerFactory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,
@@ -20,12 +28,17 @@ export function signerFactory<
 		sign(content: string): MaybePromise<string>;
 		verify(content: string, signature: string): MaybePromise<boolean>;
 	},
-): (params: NoInfer<GenericMethodsParams>) => Signer<GenericAlgorithm> {
-	return (params) => signerKind
-		.setTo(
-			{
-				algorithm,
-				...methods(params, algorithm),
-			} satisfies RemoveKind<Signer>,
-		);
+): CreateSigner<GenericAlgorithm, GenericMethodsParams> {
+	return Object.assign(
+		(params: NoInfer<GenericMethodsParams>) => signerKind
+			.setTo(
+				{
+					algorithm,
+					...methods(params, algorithm),
+				} satisfies RemoveKind<Signer>,
+			),
+		{
+			algorithm,
+		},
+	);
 }

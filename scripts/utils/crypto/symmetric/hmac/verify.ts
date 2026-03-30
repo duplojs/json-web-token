@@ -1,6 +1,6 @@
-import { decodeBase64Url, encodeText } from "@scripts/encoding";
-import type { Algorithm } from "./types";
+import { decodeBase64Url, encodeText } from "@scripts/utils";
 import { hashMapper } from "./hashMapper";
+import type { Algorithm } from "./types";
 
 export async function verify(
 	content: string,
@@ -9,10 +9,10 @@ export async function verify(
 	algorithm: Algorithm,
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
-		"spki",
+		"raw",
 		encodeText(key) as BufferSource,
 		{
-			name: "RSASSA-PKCS1-v1_5",
+			name: "HMAC",
 			hash: hashMapper[algorithm],
 		},
 		false,
@@ -20,10 +20,7 @@ export async function verify(
 	);
 
 	return globalThis.crypto.subtle.verify(
-		{
-			name: "RSASSA-PKCS1-v1_5",
-			hash: hashMapper[algorithm],
-		},
+		"HMAC",
 		cryptoKey,
 		decodeBase64Url(signature) as BufferSource,
 		encodeText(content) as BufferSource,

@@ -1,4 +1,4 @@
-import { encodeBase64Url, encodeText } from "@scripts/encoding";
+import { encodeBase64Url, encodeText } from "@scripts/utils";
 import { generateInitializationVector } from "./generateInitializationVector";
 import type { Algorithm } from "./types";
 import { keyLengthMapper } from "./keyLengthMapper";

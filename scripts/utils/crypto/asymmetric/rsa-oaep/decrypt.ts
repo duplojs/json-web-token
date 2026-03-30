@@ -1,4 +1,4 @@
-import { decodeBase64Url, decodeText, encodeText } from "@scripts/encoding";
+import { decodeBase64Url, decodeText, encodeText } from "@scripts/utils";
 import type { Algorithm } from "./types";
 import { hashMapper } from "./hashMapper";
 
