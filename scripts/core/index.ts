@@ -1,6 +1,5 @@
 export * from "./types";
 
-export * from "./signer";
-export * from "./cipher";
-export * from "./field";
+export * as Signer from "./signer";
+export * as Cipher from "./cipher";
 export * from "./tokenHandler";

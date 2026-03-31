@@ -19,7 +19,7 @@ export interface CreateSigner<
 	(params: NoInfer<GenericParams>): Signer<GenericAlgorithm>;
 }
 
-export function signerFactory<
+export function factory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,
 >(

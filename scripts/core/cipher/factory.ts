@@ -19,7 +19,7 @@ export interface CreateCipher<
 	(params: NoInfer<GenericParams>): Cipher<GenericAlgorithm>;
 }
 
-export function cipherFactory<
+export function factory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,
 >(

@@ -3,9 +3,6 @@
  */
 const chunkSize = 0x8000;
 
-/**
- * @internal
- */
 export function encodeBase64(input: Uint8Array | ArrayBuffer) {
 	const uint8Array = input instanceof Uint8Array
 		? input
@@ -18,9 +15,6 @@ export function encodeBase64(input: Uint8Array | ArrayBuffer) {
 	return btoa(arr.join(""));
 }
 
-/**
- * @internal
- */
 export function decodeBase64(encoded: string) {
 	const binary = atob(encoded);
 	const output = new Uint8Array(binary.length);

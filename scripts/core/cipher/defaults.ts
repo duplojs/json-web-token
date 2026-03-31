@@ -1,28 +1,28 @@
 import { RSA_OAEP } from "@scripts/utils";
-import { cipherFactory } from "./factory";
+import { factory } from "./factory";
 
-export interface CreateRSAOAEPCipher {
+export interface CreateRSAOAEPParams {
 	readonly privateKey: string;
 	readonly publicKey: string;
 }
 
-export const createRSAOAEPCipher = cipherFactory(
+export const createRSAOAEP = factory(
 	"RSA-OAEP",
-	(params: CreateRSAOAEPCipher, algorithm) => ({
-		encrypt: (element) => RSA_OAEP.encrypt(element, params.privateKey, algorithm),
-		decrypt: (element) => RSA_OAEP.decrypt(element, params.publicKey, algorithm),
+	(params: CreateRSAOAEPParams, algorithm) => ({
+		encrypt: (element) => RSA_OAEP.encrypt(element, params.publicKey, algorithm),
+		decrypt: (element) => RSA_OAEP.decrypt(element, params.privateKey, algorithm),
 	}),
 );
 
-export interface CreateRSAOAEP256Cipher {
+export interface CreateRSAOAEP256Params {
 	readonly privateKey: string;
 	readonly publicKey: string;
 }
 
-export const createRSAOAEP256Cipher = cipherFactory(
+export const createRSAOAEP256 = factory(
 	"RSA-OAEP-256",
-	(params: CreateRSAOAEPCipher, algorithm) => ({
-		encrypt: (element) => RSA_OAEP.encrypt(element, params.privateKey, algorithm),
-		decrypt: (element) => RSA_OAEP.decrypt(element, params.publicKey, algorithm),
+	(params: CreateRSAOAEP256Params, algorithm) => ({
+		encrypt: (element) => RSA_OAEP.encrypt(element, params.publicKey, algorithm),
+		decrypt: (element) => RSA_OAEP.decrypt(element, params.privateKey, algorithm),
 	}),
 );
