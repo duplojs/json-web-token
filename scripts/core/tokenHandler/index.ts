@@ -251,8 +251,8 @@ export function createTokenHandler<
 	});
 	const headerParser = DPE.object({
 		...(params.customHeaderShape ?? {}),
-		typ: DPE.literal(["JWT"]),
-		alg: DPE.literal([config.signer.algorithm]),
+		typ: DPE.literal("JWT"),
+		alg: DPE.literal(config.signer.algorithm),
 	});
 
 	const parseTokenContent = createParseTokenContent({
