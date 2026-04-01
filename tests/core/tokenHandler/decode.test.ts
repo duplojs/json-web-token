@@ -3,7 +3,7 @@ import { factory as cipherFactory } from "@scripts/core/cipher/factory";
 import { createTokenHandlerDecodeMethod } from "@scripts/core/tokenHandler/decode";
 
 describe("createTokenHandlerDecodeMethod", () => {
-	it("decodes a token without cipher", () => {
+	it("decodes a token without cipher", async() => {
 		const parseTokenContent = vi.fn(() => ({
 			header: {
 				typ: "JWT",
@@ -22,7 +22,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(decode("header.payload.signature")).toEqual({
+		await expect(decode("header.payload.signature")).resolves.toEqual({
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -35,7 +35,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 		expect(parseTokenContent).toHaveBeenCalledWith("header", "payload");
 	});
 
-	it("returns the parse error", () => {
+	it("returns the parse error", async() => {
 		const error = E.left("decode-error");
 		const parseTokenContent = vi.fn(() => error);
 		const decode = createTokenHandlerDecodeMethod({
@@ -46,7 +46,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(decode("header.payload.signature")).toEqual(error);
+		await expect(decode("header.payload.signature")).resolves.toEqual(error);
 	});
 
 	it("decodes a token with an async cipher", async() => {

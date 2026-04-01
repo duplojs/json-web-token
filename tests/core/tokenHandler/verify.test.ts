@@ -30,7 +30,7 @@ describe("createTokenHandlerVerifyMethod", () => {
 		}),
 	);
 
-	it("returns a signature error when the signature is missing", () => {
+	it("returns a signature error when the signature is missing", async() => {
 		const parseTokenContent = vi.fn();
 		const verify = createTokenHandlerVerifyMethod({
 			config: {
@@ -40,11 +40,11 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload")).toEqual(E.left("signature-invalid"));
+		await expect(verify("header.payload")).resolves.toEqual(E.left("signature-invalid"));
 		expect(parseTokenContent).not.toHaveBeenCalled();
 	});
 
-	it("returns a signature error when the signature is not base64url", () => {
+	it("returns a signature error when the signature is not base64url", async() => {
 		const parseTokenContent = vi.fn();
 		const verify = createTokenHandlerVerifyMethod({
 			config: {
@@ -54,11 +54,11 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.abcde")).toEqual(E.left("signature-invalid"));
+		await expect(verify("header.payload.abcde")).resolves.toEqual(E.left("signature-invalid"));
 		expect(parseTokenContent).not.toHaveBeenCalled();
 	});
 
-	it("returns the parse error", () => {
+	it("returns the parse error", async() => {
 		const error = E.left("decode-error");
 		const parseTokenContent = vi.fn(() => error);
 		const verify = createTokenHandlerVerifyMethod({
@@ -69,10 +69,10 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(error);
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(error);
 	});
 
-	it("returns a signature error when verify fails", () => {
+	it("returns a signature error when verify fails", async() => {
 		const parseTokenContent = vi.fn(() => createDecodedPayload());
 		const verify = createTokenHandlerVerifyMethod({
 			config: {
@@ -82,10 +82,10 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(E.left("signature-invalid"));
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("signature-invalid"));
 	});
 
-	it("returns an issue error when the issuer is wrong", () => {
+	it("returns an issue error when the issuer is wrong", async() => {
 		const parseTokenContent = vi.fn(() => createDecodedPayload({
 			iss: "other",
 		}));
@@ -98,10 +98,10 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(E.left("issue-invalid"));
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("issue-invalid"));
 	});
 
-	it("returns a subject error when the subject is wrong", () => {
+	it("returns a subject error when the subject is wrong", async() => {
 		const parseTokenContent = vi.fn(() => createDecodedPayload({
 			sub: "other",
 		}));
@@ -114,10 +114,10 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(E.left("subject-invalid"));
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("subject-invalid"));
 	});
 
-	it("returns an audience error when the audience is wrong", () => {
+	it("returns an audience error when the audience is wrong", async() => {
 		const parseTokenContent = vi.fn(() => createDecodedPayload({
 			aud: ["other"],
 		}));
@@ -130,10 +130,10 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(E.left("audience-invalid"));
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("audience-invalid"));
 	});
 
-	it("returns an expired error when the token is too old", () => {
+	it("returns an expired error when the token is too old", async() => {
 		const parseTokenContent = vi.fn(() => createDecodedPayload({
 			exp: 0,
 		}));
@@ -146,7 +146,7 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		expect(verify("header.payload.c2ln")).toEqual(E.left("expired"));
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("expired"));
 	});
 
 	it("verifies a token with async cipher and signer", async() => {

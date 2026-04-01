@@ -1,4 +1,4 @@
-import { E, type DP, type MaybePromise } from "@duplojs/utils";
+import { E, type DP } from "@duplojs/utils";
 import { isBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
 import { andThen, getToleranceInSeconds, isAudienceValid, nowInSeconds, resolveCipher, resolveSigner, type ParseTokenContent } from "./shared";
@@ -13,13 +13,13 @@ export function createTokenHandlerVerifyMethod(
 ) {
 	const { config, parseTokenContent } = params;
 
-	return function verify(
+	return async function(
 		token: string,
 		params?: {
 			signer?: object;
 			cipher?: object;
 		},
-	): MaybePromise<
+	): Promise<
 		| {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;

@@ -1,4 +1,4 @@
-import { D, E, unwrap, type DP, type MaybePromise } from "@duplojs/utils";
+import { D, E, unwrap, type DP } from "@duplojs/utils";
 import { encodeBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
 import { andThen, nowInSeconds, resolveCipher, resolveSigner, type ObjectParser, type TokenHeaderContent, type TokenPayloadContent } from "./shared";
@@ -14,14 +14,14 @@ export function createTokenHandlerCreateMethod(
 ) {
 	const { config, headerParser, payloadParser } = params;
 
-	return function create(
+	return async function(
 		payload: object,
 		params?: {
 			header?: object;
 			signer?: object;
 			cipher?: object;
 		},
-	): MaybePromise<
+	): Promise<
 		| string
 		| E.Left<"header-parse-error", DP.DataParserError>
 		| E.Left<"payload-parse-error", DP.DataParserError>

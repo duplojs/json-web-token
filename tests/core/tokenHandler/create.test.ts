@@ -3,7 +3,7 @@ import { Cipher, Signer, encodeBase64Url } from "@scripts";
 import { createTokenHandlerCreateMethod } from "@scripts/core/tokenHandler/create";
 
 describe("createTokenHandlerCreateMethod", () => {
-	it("returns the header parse error", () => {
+	it("returns the header parse error", async() => {
 		const parserError = { type: "header" };
 		const headerParser = {
 			parse: vi.fn(() => E.left("invalid-header", parserError)),
@@ -26,7 +26,7 @@ describe("createTokenHandlerCreateMethod", () => {
 			payloadParser: payloadParser as never,
 		});
 
-		expect(
+		await expect(
 			create(
 				{ id: "1" },
 				{
@@ -35,11 +35,11 @@ describe("createTokenHandlerCreateMethod", () => {
 					},
 				},
 			),
-		).toEqual(E.left("header-parse-error", parserError));
+		).resolves.toEqual(E.left("header-parse-error", parserError));
 		expect(payloadParser.parse).not.toHaveBeenCalled();
 	});
 
-	it("returns the payload parse error", () => {
+	it("returns the payload parse error", async() => {
 		const now = D.now();
 		const issuedAt = Math.floor(D.toTimestamp(now) / 1000);
 		const parserError = { type: "payload" };
@@ -68,7 +68,7 @@ describe("createTokenHandlerCreateMethod", () => {
 			payloadParser: payloadParser as never,
 		});
 
-		expect(create({ id: "1" })).toEqual(E.left("payload-parse-error", parserError));
+		await expect(create({ id: "1" })).resolves.toEqual(E.left("payload-parse-error", parserError));
 		expect(payloadParser.parse).toHaveBeenCalledWith({
 			iss: "issuer",
 			sub: "subject",
@@ -79,7 +79,7 @@ describe("createTokenHandlerCreateMethod", () => {
 		});
 	});
 
-	it("creates a token without cipher", () => {
+	it("creates a token without cipher", async() => {
 		const now = D.now();
 		const issuedAt = Math.floor(D.toTimestamp(now) / 1000);
 		const header = {
@@ -124,7 +124,7 @@ describe("createTokenHandlerCreateMethod", () => {
 		const encodedHeader = encodeBase64Url(JSON.stringify(header));
 		const encodedPayload = encodeBase64Url(JSON.stringify(payload));
 
-		expect(
+		await expect(
 			create(
 				{ id: "1" },
 				{
@@ -133,7 +133,7 @@ describe("createTokenHandlerCreateMethod", () => {
 					},
 				},
 			),
-		).toBe(`${encodedHeader}.${encodedPayload}.azerty`);
+		).resolves.toBe(`${encodedHeader}.${encodedPayload}.azerty`);
 		expect(headerParser.parse).toHaveBeenCalledWith({
 			kid: "1",
 			typ: "JWT",

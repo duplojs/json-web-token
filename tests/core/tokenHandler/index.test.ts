@@ -69,11 +69,11 @@ describe("createTokenHandler", () => {
 			},
 		);
 
-		expect(tokenHandler.decode(token as string)).toEqual(expected);
-		expect(tokenHandler.verify(token as string)).toEqual(expected);
+		await expect(tokenHandler.decode(token as string)).resolves.toEqual(expected);
+		await expect(tokenHandler.verify(token as string)).resolves.toEqual(expected);
 	});
 
-	it("returns the header parse error from create", () => {
+	it("returns the header parse error from create", async() => {
 		const tokenHandler = createTokenHandler({
 			maxAge: D.createTime(1, "hour"),
 			signer: Signer.factory(
@@ -91,7 +91,7 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		expect(
+		await expect(
 			tokenHandler.create(
 				{
 					id: "1",
@@ -102,12 +102,12 @@ describe("createTokenHandler", () => {
 					},
 				},
 			),
-		).toMatchObject({
+		).resolves.toMatchObject({
 			"@duplojs/utils/kind/@DuplojsUtilsEither/information": "header-parse-error",
 		});
 	});
 
-	it("returns the payload parse error from decode", () => {
+	it("returns the payload parse error from decode", async() => {
 		const tokenHandler = createTokenHandler({
 			maxAge: D.createTime(1, "hour"),
 			signer: Signer.factory(
@@ -123,7 +123,7 @@ describe("createTokenHandler", () => {
 		});
 		const token = `${encodeBase64Url("{\"typ\":\"JWT\",\"alg\":\"TEST\"}")}.${encodeBase64Url("{\"exp\":1,\"iat\":1}")}.${signature}`;
 
-		expect(tokenHandler.decode(token)).toMatchObject({
+		await expect(tokenHandler.decode(token)).resolves.toMatchObject({
 			"@duplojs/utils/kind/@DuplojsUtilsEither/information": "payload-parse-error",
 		});
 	});

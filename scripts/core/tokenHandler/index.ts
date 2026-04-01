@@ -127,7 +127,7 @@ export interface TokenHandlerMethods<
 	verify(
 		token: string,
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
-	): MaybePromise<
+	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
 		| E.Left<"decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
@@ -141,7 +141,7 @@ export interface TokenHandlerMethods<
 	decode(
 		token: string,
 		...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>
-	): MaybePromise<
+	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
 		| E.Left<"decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
@@ -150,7 +150,7 @@ export interface TokenHandlerMethods<
 	create(
 		payload: GenericCustomPayload,
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
-	): MaybePromise<
+	): Promise<
 		| string
 		| E.Left<"header-parse-error", DP.DataParserError>
 		| E.Left<"payload-parse-error", DP.DataParserError>

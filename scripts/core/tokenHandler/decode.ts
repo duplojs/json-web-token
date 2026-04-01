@@ -1,4 +1,4 @@
-import { E, type DP, type MaybePromise } from "@duplojs/utils";
+import { E, type DP } from "@duplojs/utils";
 import type { TokenHandlerConfig } from "./index";
 import { andThen, resolveCipher, type ParseTokenContent } from "./shared";
 
@@ -12,12 +12,12 @@ export function createTokenHandlerDecodeMethod(
 ) {
 	const { config, parseTokenContent } = params;
 
-	return function decode(
+	return async function(
 		token: string,
 		params?: {
 			cipher?: object;
 		},
-	): MaybePromise<
+	): Promise<
 		| {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
