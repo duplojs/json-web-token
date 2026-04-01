@@ -1,6 +1,8 @@
 import { RSA, encodeText } from "@scripts";
 
 describe("sign", () => {
+	const privateKey = "-----BEGIN PRIVATE KEY-----\ncHJpdmF0ZS1rZXk=\n-----END PRIVATE KEY-----";
+
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
@@ -10,7 +12,7 @@ describe("sign", () => {
 		const importKey = vi.spyOn(globalThis.crypto.subtle, "importKey").mockResolvedValue(cryptoKey);
 		const sign = vi.spyOn(globalThis.crypto.subtle, "sign").mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
 
-		await expect(RSA.sign("hello", "private-key", "RS256")).resolves.toBe("AQID");
+		await expect(RSA.sign("hello", privateKey, "RS256")).resolves.toBe("AQID");
 		expect(importKey).toHaveBeenCalledWith(
 			"pkcs8",
 			encodeText("private-key"),
@@ -36,7 +38,7 @@ describe("sign", () => {
 		const importKey = vi.spyOn(globalThis.crypto.subtle, "importKey").mockResolvedValue(cryptoKey);
 		vi.spyOn(globalThis.crypto.subtle, "sign").mockResolvedValue(new Uint8Array([1]).buffer);
 
-		await RSA.sign("hello", "private-key", "RS512");
+		await RSA.sign("hello", privateKey, "RS512");
 
 		expect(importKey).toHaveBeenCalledWith(
 			"pkcs8",

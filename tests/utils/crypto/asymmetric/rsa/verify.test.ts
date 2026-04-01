@@ -1,6 +1,8 @@
 import { RSA, encodeText } from "@scripts";
 
 describe("verify", () => {
+	const publicKey = "-----BEGIN PUBLIC KEY-----\ncHVibGljLWtleQ==\n-----END PUBLIC KEY-----";
+
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
@@ -10,7 +12,7 @@ describe("verify", () => {
 		const importKey = vi.spyOn(globalThis.crypto.subtle, "importKey").mockResolvedValue(cryptoKey);
 		const verify = vi.spyOn(globalThis.crypto.subtle, "verify").mockResolvedValue(true);
 
-		await expect(RSA.verify("hello", "AQID", "public-key", "RS256")).resolves.toBe(true);
+		await expect(RSA.verify("hello", "AQID", publicKey, "RS256")).resolves.toBe(true);
 		expect(importKey).toHaveBeenCalledWith(
 			"spki",
 			encodeText("public-key"),
@@ -36,6 +38,6 @@ describe("verify", () => {
 		vi.spyOn(globalThis.crypto.subtle, "importKey").mockResolvedValue({} as CryptoKey);
 		vi.spyOn(globalThis.crypto.subtle, "verify").mockResolvedValue(false);
 
-		await expect(RSA.verify("hello", "AQID", "public-key", "RS256")).resolves.toBe(false);
+		await expect(RSA.verify("hello", "AQID", publicKey, "RS256")).resolves.toBe(false);
 	});
 });

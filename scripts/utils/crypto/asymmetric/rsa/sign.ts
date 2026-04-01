@@ -1,4 +1,5 @@
 import { encodeBase64Url, encodeText } from "@scripts/utils";
+import { pemToBinary } from "../pemToBinary";
 import { hashMapper } from "./hashMapper";
 import type { Algorithm } from "./types";
 
@@ -9,7 +10,7 @@ export async function sign(
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
 		"pkcs8",
-		encodeText(key) as BufferSource,
+		pemToBinary(key) as BufferSource,
 		{
 			name: "RSASSA-PKCS1-v1_5",
 			hash: hashMapper[algorithm],

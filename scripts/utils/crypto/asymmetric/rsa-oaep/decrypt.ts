@@ -1,4 +1,5 @@
 import { decodeBase64Url, decodeText, encodeText } from "@scripts/utils";
+import { pemToBinary } from "../pemToBinary";
 import type { Algorithm } from "./types";
 import { hashMapper } from "./hashMapper";
 
@@ -9,7 +10,7 @@ export async function decrypt(
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
 		"pkcs8",
-		encodeText(key) as BufferSource,
+		pemToBinary(key) as BufferSource,
 		{
 			name: "RSA-OAEP",
 			hash: hashMapper[algorithm],

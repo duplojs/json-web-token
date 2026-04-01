@@ -1,4 +1,5 @@
 import { decodeBase64Url, encodeText } from "@scripts/utils";
+import { pemToBinary } from "../pemToBinary";
 import type { Algorithm } from "./types";
 import { hashMapper } from "./hashMapper";
 
@@ -10,7 +11,7 @@ export async function verify(
 ) {
 	const cryptoKey = await globalThis.crypto.subtle.importKey(
 		"spki",
-		encodeText(key) as BufferSource,
+		pemToBinary(key) as BufferSource,
 		{
 			name: "RSASSA-PKCS1-v1_5",
 			hash: hashMapper[algorithm],
