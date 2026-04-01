@@ -19,6 +19,9 @@ export interface CreateSigner<
 	(params: NoInfer<GenericParams>): Signer<GenericAlgorithm>;
 }
 
+/**
+ * {@include core/signer/factory/index.md}
+ */
 export function factory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,

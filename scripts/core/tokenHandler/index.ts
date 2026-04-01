@@ -198,6 +198,9 @@ type ForbiddenDataParser<
 	? { [SymbolErrorForbidden]: "Consists of a prohibited data parser." }
 	: GenericDataParserShape;
 
+/**
+ * {@include core/tokenHandler/createTokenHandler/index.md}
+ */
 export function createTokenHandler<
 	GenericTokenHandlerConfig extends TokenHandlerConfig,
 	GenericCustomPayload extends DP.DataParserObjectShape,

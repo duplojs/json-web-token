@@ -19,6 +19,9 @@ export interface CreateCipher<
 	(params: NoInfer<GenericParams>): Cipher<GenericAlgorithm>;
 }
 
+/**
+ * {@include core/cipher/factory/index.md}
+ */
 export function factory<
 	const GenericAlgorithm extends string,
 	GenericMethodsParams extends unknown,
