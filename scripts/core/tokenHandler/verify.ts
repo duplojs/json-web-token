@@ -1,4 +1,4 @@
-import { E, type DP } from "@duplojs/utils";
+import { type D, E, type DP } from "@duplojs/utils";
 import { isBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
 import { andThen, getToleranceInSeconds, isAudienceValid, nowInSeconds, resolveCipher, resolveSigner, type ParseTokenContent } from "./shared";
@@ -18,14 +18,17 @@ export function createTokenHandlerVerifyMethod(
 		params?: {
 			signer?: object;
 			cipher?: object;
+			tolerance?: D.TheTime;
 		},
 	): Promise<
 		| {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
 		}
-		| E.Left<"decode-error">
+		| E.Left<"token-format">
+		| E.Left<"header-decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
+		| E.Left<"payload-decode-error">
 		| E.Left<"payload-parse-error", DP.DataParserError>
 		| E.Left<"signature-invalid">
 		| E.Left<"issue-invalid">
@@ -83,7 +86,7 @@ export function createTokenHandlerVerifyMethod(
 				}
 
 				if (
-					(decodeResult.payload.exp + getToleranceInSeconds(config.tolerance))
+					(decodeResult.payload.exp + getToleranceInSeconds(params?.tolerance))
 					< nowInSeconds(config.now)
 				) {
 					return E.left("expired");

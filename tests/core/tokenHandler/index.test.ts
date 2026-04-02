@@ -1,5 +1,5 @@
 import { D, DPE, E } from "@duplojs/utils";
-import { Cipher, Signer, TokenHandlerWrongConfig, createTokenHandler, encodeBase64Url } from "@scripts";
+import { Cipher, Signer, TokenHandlerCreateError, TokenHandlerWrongConfig, createTokenHandler, encodeBase64Url } from "@scripts";
 
 describe("createTokenHandler", () => {
 	const signature = "dHl0dWk";
@@ -107,6 +107,50 @@ describe("createTokenHandler", () => {
 		});
 	});
 
+	it("throws from createOrThrow when token creation fails", async() => {
+		const tokenHandler = createTokenHandler({
+			maxAge: D.createTime(1, "hour"),
+			signer: Signer.factory(
+				"TEST",
+				() => ({
+					sign: () => signature,
+					verify: () => true,
+				}),
+			)({}),
+			customPayloadShape: {
+				id: DPE.string(),
+			},
+			customHeaderShape: {
+				kid: DPE.string(),
+			},
+		});
+
+		await expect(
+			tokenHandler.createOrThrow(
+				{
+					id: "1",
+				},
+				{
+					header: {
+						kid: 1 as never,
+					},
+				},
+			),
+		).rejects.toThrow(TokenHandlerCreateError);
+		await expect(
+			tokenHandler.createOrThrow(
+				{
+					id: "1",
+				},
+				{
+					header: {
+						kid: 1 as never,
+					},
+				},
+			),
+		).rejects.toThrow("Token creation failed with \"header-parse-error\".");
+	});
+
 	it("returns the payload parse error from decode", async() => {
 		const tokenHandler = createTokenHandler({
 			maxAge: D.createTime(1, "hour"),
@@ -210,5 +254,27 @@ describe("createTokenHandler", () => {
 		expect(verify).toHaveBeenCalledTimes(1);
 		expect(encrypt).toHaveBeenCalledTimes(1);
 		expect(decrypt).toHaveBeenCalledTimes(2);
+	});
+
+	it("creates a token with createOrThrow", async() => {
+		const tokenHandler = createTokenHandler({
+			maxAge: D.createTime(1, "hour"),
+			signer: Signer.factory(
+				"TEST",
+				() => ({
+					sign: () => signature,
+					verify: () => true,
+				}),
+			)({}),
+			customPayloadShape: {
+				id: DPE.string(),
+			},
+		});
+
+		await expect(
+			tokenHandler.createOrThrow({
+				id: "1",
+			}),
+		).resolves.toBeTypeOf("string");
 	});
 });

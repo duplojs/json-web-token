@@ -15,6 +15,6 @@ describe("jsonParse", () => {
 	});
 
 	it("returns left on invalid json", () => {
-		expect(E.isLeft(jsonParse("{"))).toBe(true);
+		expect(jsonParse("{")).toBeUndefined();
 	});
 });

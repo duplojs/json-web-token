@@ -1,9 +1,10 @@
-import { kindHeritage, DPE, E, unwrap } from '@duplojs/utils';
+import { kindHeritage, E, DPE, unwrap } from '@duplojs/utils';
 import { createJsonWebTokenKind } from '../../kind.mjs';
 import { createTokenHandlerCreateMethod } from './create.mjs';
 import { createTokenHandlerDecodeMethod } from './decode.mjs';
 import { createTokenHandlerVerifyMethod } from './verify.mjs';
 import { createParseTokenContent } from './shared/parseTokenContent.mjs';
+import { andThen } from './shared/andThen.mjs';
 
 const tokenHandlerConfigDataParser = DPE.object({
     issuer: DPE.string().optional(),
@@ -12,13 +13,17 @@ const tokenHandlerConfigDataParser = DPE.object({
         DPE.string().array(),
     ]).optional(),
     subject: DPE.string().optional(),
-    tolerance: DPE.time().optional(),
     maxAge: DPE.time(),
 });
 const tokenHandlerKind = createJsonWebTokenKind("token-handler");
 class TokenHandlerWrongConfig extends kindHeritage("token-handler-wrong-config", tokenHandlerKind, Error) {
     constructor(error) {
         super({}, ["Token handler config is wrong. Please check your definition shape."]);
+    }
+}
+class TokenHandlerCreateError extends kindHeritage("token-handler-create-error", tokenHandlerKind, Error) {
+    constructor(error) {
+        super({}, [`Token creation failed with "${E.informationKind.getValue(error)}".`]);
     }
 }
 /**
@@ -29,7 +34,6 @@ function createTokenHandler(params) {
         issuer: params.issuer,
         audience: params.audience,
         subject: params.subject,
-        tolerance: params.tolerance,
         maxAge: params.maxAge,
     });
     if (E.isLeft(configResult)) {
@@ -75,7 +79,19 @@ function createTokenHandler(params) {
             config,
             parseTokenContent,
         }),
+        createOrThrow(payload, params) {
+            return andThen(createTokenHandlerCreateMethod({
+                config,
+                headerParser,
+                payloadParser,
+            })(payload, params), (value) => {
+                if (E.isLeft(value)) {
+                    throw new TokenHandlerCreateError(value);
+                }
+                return value;
+            });
+        },
     });
 }
 
-export { TokenHandlerWrongConfig, createTokenHandler };
+export { TokenHandlerCreateError, TokenHandlerWrongConfig, createTokenHandler };

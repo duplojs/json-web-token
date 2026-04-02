@@ -30,5 +30,6 @@ exports.AES_GCM = index$2;
 exports.HMAC = index$3;
 exports.Signer = index$4;
 exports.Cipher = index$5;
+exports.TokenHandlerCreateError = index$6.TokenHandlerCreateError;
 exports.TokenHandlerWrongConfig = index$6.TokenHandlerWrongConfig;
 exports.createTokenHandler = index$6.createTokenHandler;

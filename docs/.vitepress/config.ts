@@ -145,7 +145,7 @@ export default defineConfig({
 	},
 	locales: {
 		fr: {
-			description: "",
+			description: "Une librairie typée pour signer, chiffrer et valider vos tokens sans sacrifier la lisibilité.",
 			label: "Français",
 			lang: "fr",
 			link: "/fr/",
@@ -187,7 +187,7 @@ export default defineConfig({
 					},
 				],
 				sidebar: {
-					"/en/v0/guide/": [
+					"/fr/v0/guide/": [
 						{
 							text: "Commencer",
 							items: [
@@ -219,7 +219,7 @@ export default defineConfig({
 			},
 		},
 		root: {
-			description: "",
+			description: "A typed library to sign, encrypt and validate your tokens without sacrificing readability.",
 			label: "English",
 			lang: "en",
 			link: "/en/",

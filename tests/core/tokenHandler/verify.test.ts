@@ -58,8 +58,22 @@ describe("createTokenHandlerVerifyMethod", () => {
 		expect(parseTokenContent).not.toHaveBeenCalled();
 	});
 
-	it("returns the parse error", async() => {
-		const error = E.left("decode-error");
+	it("returns the token format error", async() => {
+		const error = E.left("token-format");
+		const parseTokenContent = vi.fn(() => error);
+		const verify = createTokenHandlerVerifyMethod({
+			config: {
+				maxAge: D.createTime(1, "hour"),
+				signer: createSigner({ verifyResult: true }),
+			},
+			parseTokenContent: parseTokenContent as never,
+		});
+
+		await expect(verify("header.payload.c2ln")).resolves.toEqual(error);
+	});
+
+	it("returns the payload decode error", async() => {
+		const error = E.left("payload-decode-error");
 		const parseTokenContent = vi.fn(() => error);
 		const verify = createTokenHandlerVerifyMethod({
 			config: {
@@ -147,6 +161,29 @@ describe("createTokenHandlerVerifyMethod", () => {
 		});
 
 		await expect(verify("header.payload.c2ln")).resolves.toEqual(E.left("expired"));
+	});
+
+	it("accepts an expired token when verify tolerance covers it", async() => {
+		const now = D.now();
+		const parseTokenContent = vi.fn(() => createDecodedPayload({
+			exp: Math.floor(D.toTimestamp(now) / 1000) - 30,
+		}));
+		const verify = createTokenHandlerVerifyMethod({
+			config: {
+				maxAge: D.createTime(1, "hour"),
+				now: () => now,
+				signer: createSigner({ verifyResult: true }),
+			},
+			parseTokenContent: parseTokenContent as never,
+		});
+
+		await expect(
+			verify("header.payload.c2ln", {
+				tolerance: D.createTime(1, "minute"),
+			}),
+		).resolves.toEqual(createDecodedPayload({
+			exp: Math.floor(D.toTimestamp(now) / 1000) - 30,
+		}));
 	});
 
 	it("verifies a token with async cipher and signer", async() => {

@@ -1,4 +1,4 @@
-import { type D, type DP, unwrap, DPE, E, type Kind, type MaybePromise, type SimplifyTopLevel, kindHeritage, type O } from "@duplojs/utils";
+import { type D, type DP, unwrap, DPE, E, type Kind, type SimplifyTopLevel, kindHeritage, type O, type RemoveKind } from "@duplojs/utils";
 import { createJsonWebTokenKind } from "@scripts/kind";
 import type { CreateSigner, Signer } from "../signer";
 import type { CreateCipher, Cipher } from "../cipher";
@@ -6,7 +6,7 @@ import type { ExtractRequiredKeys, UnknownToUndefined } from "../types";
 import { createTokenHandlerCreateMethod } from "./create";
 import { createTokenHandlerDecodeMethod } from "./decode";
 import { createTokenHandlerVerifyMethod } from "./verify";
-import { createParseTokenContent } from "./shared";
+import { andThen, createParseTokenContent } from "./shared";
 
 const tokenHandlerConfigDataParser = DPE.object({
 	issuer: DPE.string().optional(),
@@ -15,7 +15,6 @@ const tokenHandlerConfigDataParser = DPE.object({
 		DPE.string().array(),
 	]).optional(),
 	subject: DPE.string().optional(),
-	tolerance: DPE.time().optional(),
 	maxAge: DPE.time(),
 });
 
@@ -78,7 +77,10 @@ type VerifyParams<
 		GenericTokenHandlerConfig["cipher"] extends (params: infer InferredCipherParams) => any
 			? { cipher: InferredCipherParams }
 			: {}
-	);
+	)
+	& {
+		tolerance?: D.TheTime;
+	};
 
 type CreateParams<
 	GenericTokenHandlerConfig extends TokenHandlerConfig,
@@ -129,8 +131,10 @@ export interface TokenHandlerMethods<
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
 	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
-		| E.Left<"decode-error">
+		| E.Left<"token-format">
+		| E.Left<"header-decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
+		| E.Left<"payload-decode-error">
 		| E.Left<"payload-parse-error", DP.DataParserError>
 		| E.Left<"signature-invalid">
 		| E.Left<"issue-invalid">
@@ -143,8 +147,10 @@ export interface TokenHandlerMethods<
 		...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>
 	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
-		| E.Left<"decode-error">
+		| E.Left<"token-format">
+		| E.Left<"header-decode-error">
 		| E.Left<"header-parse-error", DP.DataParserError>
+		| E.Left<"payload-decode-error">
 		| E.Left<"payload-parse-error", DP.DataParserError>
 	>;
 	create(
@@ -155,6 +161,10 @@ export interface TokenHandlerMethods<
 		| E.Left<"header-parse-error", DP.DataParserError>
 		| E.Left<"payload-parse-error", DP.DataParserError>
 	>;
+	createOrThrow(
+		payload: GenericCustomPayload,
+		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
+	): Promise<string>;
 }
 
 const tokenHandlerKind = createJsonWebTokenKind("token-handler");
@@ -176,6 +186,16 @@ export class TokenHandlerWrongConfig extends kindHeritage(
 ) {
 	public constructor(error: DP.DataParserError) {
 		super({}, ["Token handler config is wrong. Please check your definition shape."]);
+	}
+}
+
+export class TokenHandlerCreateError extends kindHeritage(
+	"token-handler-create-error",
+	tokenHandlerKind,
+	Error,
+) {
+	public constructor(error: E.Left) {
+		super({}, [`Token creation failed with "${E.informationKind.getValue(error)}".`]);
 	}
 }
 
@@ -227,7 +247,6 @@ export function createTokenHandler<
 		issuer: params.issuer,
 		audience: params.audience,
 		subject: params.subject,
-		tolerance: params.tolerance,
 		maxAge: params.maxAge,
 	});
 	if (E.isLeft(configResult)) {
@@ -278,6 +297,21 @@ export function createTokenHandler<
 				config,
 				parseTokenContent,
 			}),
-		},
+			createOrThrow(payload: object, params?: object) {
+				return andThen(
+					createTokenHandlerCreateMethod({
+						config,
+						headerParser,
+						payloadParser,
+					})(payload, params),
+					(value) => {
+						if (E.isLeft(value)) {
+							throw new TokenHandlerCreateError(value);
+						}
+						return value;
+					},
+				);
+			},
+		} satisfies Record<keyof RemoveKind<TokenHandler>, any>,
 	) as never;
 }

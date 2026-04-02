@@ -11,7 +11,7 @@ const tokenHandler = createTokenHandler({
 	},
 });
 
-const token = await tokenHandler.create({
+const token = await tokenHandler.createOrThrow({
 	userId: "1",
 });
 

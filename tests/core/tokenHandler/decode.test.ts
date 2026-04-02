@@ -35,8 +35,22 @@ describe("createTokenHandlerDecodeMethod", () => {
 		expect(parseTokenContent).toHaveBeenCalledWith("header", "payload");
 	});
 
-	it("returns the parse error", async() => {
-		const error = E.left("decode-error");
+	it("returns the token format error", async() => {
+		const error = E.left("token-format");
+		const parseTokenContent = vi.fn(() => error);
+		const decode = createTokenHandlerDecodeMethod({
+			config: {
+				maxAge: D.createTime(1, "hour"),
+				signer: {} as never,
+			},
+			parseTokenContent: parseTokenContent as never,
+		});
+
+		await expect(decode("header.payload.signature")).resolves.toEqual(error);
+	});
+
+	it("returns the header decode error", async() => {
+		const error = E.left("header-decode-error");
 		const parseTokenContent = vi.fn(() => error);
 		const decode = createTokenHandlerDecodeMethod({
 			config: {

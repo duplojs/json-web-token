@@ -12,19 +12,19 @@ function createParseTokenContent(params) {
             || !encodedPayload
             || !base64Url.isBase64Url(encodedHeader)
             || !base64Url.isBase64Url(encodedPayload)) {
-            return utils.E.left("decode-error");
+            return utils.E.left("token-format");
         }
         const headerJsonResult = jsonParse.jsonParse(text.decodeText(base64Url.decodeBase64Url(encodedHeader)));
-        if (utils.E.isLeft(headerJsonResult)) {
-            return utils.E.left("decode-error");
+        if (headerJsonResult === undefined) {
+            return utils.E.left("header-decode-error");
         }
         const headerResult = headerParser.parse(headerJsonResult);
         if (utils.E.isLeft(headerResult)) {
             return utils.E.left("header-parse-error", utils.unwrap(headerResult));
         }
         const payloadJsonResult = jsonParse.jsonParse(text.decodeText(base64Url.decodeBase64Url(encodedPayload)));
-        if (utils.E.isLeft(payloadJsonResult)) {
-            return utils.E.left("decode-error");
+        if (payloadJsonResult === undefined) {
+            return utils.E.left("payload-decode-error");
         }
         const payloadResult = payloadParser.parse(payloadJsonResult);
         if (utils.E.isLeft(payloadResult)) {

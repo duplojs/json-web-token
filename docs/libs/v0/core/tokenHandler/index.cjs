@@ -6,6 +6,7 @@ var create = require('./create.cjs');
 var decode = require('./decode.cjs');
 var verify = require('./verify.cjs');
 var parseTokenContent = require('./shared/parseTokenContent.cjs');
+var andThen = require('./shared/andThen.cjs');
 
 const tokenHandlerConfigDataParser = utils.DPE.object({
     issuer: utils.DPE.string().optional(),
@@ -14,13 +15,17 @@ const tokenHandlerConfigDataParser = utils.DPE.object({
         utils.DPE.string().array(),
     ]).optional(),
     subject: utils.DPE.string().optional(),
-    tolerance: utils.DPE.time().optional(),
     maxAge: utils.DPE.time(),
 });
 const tokenHandlerKind = kind.createJsonWebTokenKind("token-handler");
 class TokenHandlerWrongConfig extends utils.kindHeritage("token-handler-wrong-config", tokenHandlerKind, Error) {
     constructor(error) {
         super({}, ["Token handler config is wrong. Please check your definition shape."]);
+    }
+}
+class TokenHandlerCreateError extends utils.kindHeritage("token-handler-create-error", tokenHandlerKind, Error) {
+    constructor(error) {
+        super({}, [`Token creation failed with "${utils.E.informationKind.getValue(error)}".`]);
     }
 }
 /**
@@ -31,7 +36,6 @@ function createTokenHandler(params) {
         issuer: params.issuer,
         audience: params.audience,
         subject: params.subject,
-        tolerance: params.tolerance,
         maxAge: params.maxAge,
     });
     if (utils.E.isLeft(configResult)) {
@@ -77,8 +81,21 @@ function createTokenHandler(params) {
             config,
             parseTokenContent: parseTokenContent$1,
         }),
+        createOrThrow(payload, params) {
+            return andThen.andThen(create.createTokenHandlerCreateMethod({
+                config,
+                headerParser,
+                payloadParser,
+            })(payload, params), (value) => {
+                if (utils.E.isLeft(value)) {
+                    throw new TokenHandlerCreateError(value);
+                }
+                return value;
+            });
+        },
     });
 }
 
+exports.TokenHandlerCreateError = TokenHandlerCreateError;
 exports.TokenHandlerWrongConfig = TokenHandlerWrongConfig;
 exports.createTokenHandler = createTokenHandler;

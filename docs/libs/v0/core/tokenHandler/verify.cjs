@@ -37,7 +37,7 @@ function createTokenHandlerVerifyMethod(params) {
                 if (!isAudienceValid.isAudienceValid(config.audience, decodeResult.payload.aud)) {
                     return utils.E.left("audience-invalid");
                 }
-                if ((decodeResult.payload.exp + getToleranceInSeconds.getToleranceInSeconds(config.tolerance))
+                if ((decodeResult.payload.exp + getToleranceInSeconds.getToleranceInSeconds(params?.tolerance))
                     < nowInSeconds.nowInSeconds(config.now)) {
                     return utils.E.left("expired");
                 }

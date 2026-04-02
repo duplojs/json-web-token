@@ -3,27 +3,27 @@ import { encodeBase64Url } from "@scripts";
 import { createParseTokenContent } from "@scripts/core/tokenHandler/shared";
 
 describe("createParseTokenContent", () => {
-	it("returns decode error without parts", () => {
+	it("returns token format without parts", () => {
 		const parseTokenContent = createParseTokenContent({
 			headerParser: { parse: vi.fn() },
 			payloadParser: { parse: vi.fn() },
 		});
 
-		expect(parseTokenContent(undefined, "payload")).toEqual(E.left("decode-error"));
-		expect(parseTokenContent("header", undefined)).toEqual(E.left("decode-error"));
+		expect(parseTokenContent(undefined, "payload")).toEqual(E.left("token-format"));
+		expect(parseTokenContent("header", undefined)).toEqual(E.left("token-format"));
 	});
 
-	it("returns decode error with invalid base64url", () => {
+	it("returns token format with invalid base64url", () => {
 		const parseTokenContent = createParseTokenContent({
 			headerParser: { parse: vi.fn() },
 			payloadParser: { parse: vi.fn() },
 		});
 
-		expect(parseTokenContent("@@", "payload")).toEqual(E.left("decode-error"));
-		expect(parseTokenContent("header", "@@")).toEqual(E.left("decode-error"));
+		expect(parseTokenContent("@@", "payload")).toEqual(E.left("token-format"));
+		expect(parseTokenContent("header", "@@")).toEqual(E.left("token-format"));
 	});
 
-	it("returns decode error with invalid header json", () => {
+	it("returns header decode error with invalid header json", () => {
 		const parseTokenContent = createParseTokenContent({
 			headerParser: { parse: vi.fn() },
 			payloadParser: { parse: vi.fn() },
@@ -34,7 +34,7 @@ describe("createParseTokenContent", () => {
 				encodeBase64Url("{"),
 				encodeBase64Url("{\"exp\":1,\"iat\":1}"),
 			),
-		).toEqual(E.left("decode-error"));
+		).toEqual(E.left("header-decode-error"));
 	});
 
 	it("returns header parse error", () => {
@@ -65,7 +65,7 @@ describe("createParseTokenContent", () => {
 		});
 	});
 
-	it("returns decode error with invalid payload json", () => {
+	it("returns payload decode error with invalid payload json", () => {
 		const parseTokenContent = createParseTokenContent({
 			headerParser: {
 				parse: vi.fn(() => ({
@@ -81,7 +81,7 @@ describe("createParseTokenContent", () => {
 				encodeBase64Url("{\"typ\":\"JWT\",\"alg\":\"HS256\"}"),
 				encodeBase64Url("{"),
 			),
-		).toEqual(E.left("decode-error"));
+		).toEqual(E.left("payload-decode-error"));
 	});
 
 	it("returns payload parse error", () => {

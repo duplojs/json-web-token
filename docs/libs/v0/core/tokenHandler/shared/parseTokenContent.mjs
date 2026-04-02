@@ -10,19 +10,19 @@ function createParseTokenContent(params) {
             || !encodedPayload
             || !isBase64Url(encodedHeader)
             || !isBase64Url(encodedPayload)) {
-            return E.left("decode-error");
+            return E.left("token-format");
         }
         const headerJsonResult = jsonParse(decodeText(decodeBase64Url(encodedHeader)));
-        if (E.isLeft(headerJsonResult)) {
-            return E.left("decode-error");
+        if (headerJsonResult === undefined) {
+            return E.left("header-decode-error");
         }
         const headerResult = headerParser.parse(headerJsonResult);
         if (E.isLeft(headerResult)) {
             return E.left("header-parse-error", unwrap(headerResult));
         }
         const payloadJsonResult = jsonParse(decodeText(decodeBase64Url(encodedPayload)));
-        if (E.isLeft(payloadJsonResult)) {
-            return E.left("decode-error");
+        if (payloadJsonResult === undefined) {
+            return E.left("payload-decode-error");
         }
         const payloadResult = payloadParser.parse(payloadJsonResult);
         if (E.isLeft(payloadResult)) {

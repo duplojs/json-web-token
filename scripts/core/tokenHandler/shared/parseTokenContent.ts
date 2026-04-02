@@ -30,8 +30,10 @@ export type ParseTokenContentResult =
 		header: TokenHeaderContent;
 		payload: TokenPayloadContent;
 	}
-	| E.Left<"decode-error">
+	| E.Left<"token-format">
+	| E.Left<"header-decode-error">
 	| E.Left<"header-parse-error", DP.DataParserError>
+	| E.Left<"payload-decode-error">
 	| E.Left<"payload-parse-error", DP.DataParserError>;
 
 export type ParseTokenContent = (
@@ -51,14 +53,14 @@ export function createParseTokenContent(
 			|| !isBase64Url(encodedHeader)
 			|| !isBase64Url(encodedPayload)
 		) {
-			return E.left("decode-error");
+			return E.left("token-format");
 		}
 
 		const headerJsonResult = jsonParse(
 			decodeText(decodeBase64Url(encodedHeader)),
 		);
-		if (E.isLeft(headerJsonResult)) {
-			return E.left("decode-error");
+		if (headerJsonResult === undefined) {
+			return E.left("header-decode-error");
 		}
 
 		const headerResult = headerParser.parse(headerJsonResult);
@@ -69,8 +71,8 @@ export function createParseTokenContent(
 		const payloadJsonResult = jsonParse(
 			decodeText(decodeBase64Url(encodedPayload)),
 		);
-		if (E.isLeft(payloadJsonResult)) {
-			return E.left("decode-error");
+		if (payloadJsonResult === undefined) {
+			return E.left("payload-decode-error");
 		}
 
 		const payloadResult = payloadParser.parse(payloadJsonResult);

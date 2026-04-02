@@ -15,4 +15,4 @@ import * as index$4 from './core/signer/index.mjs';
 export { index$4 as Signer };
 import * as index$5 from './core/cipher/index.mjs';
 export { index$5 as Cipher };
-export { TokenHandlerWrongConfig, createTokenHandler } from './core/tokenHandler/index.mjs';
+export { TokenHandlerCreateError, TokenHandlerWrongConfig, createTokenHandler } from './core/tokenHandler/index.mjs';

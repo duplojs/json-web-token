@@ -10,5 +10,5 @@ export declare function createTokenHandlerDecodeMethod(params: CreateTokenHandle
 }) => Promise<{
     header: Record<string, unknown>;
     payload: Record<string, unknown>;
-} | E.Left<"decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-parse-error", DP.DataParserError>>;
+} | E.Left<"token-format"> | E.Left<"header-decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-decode-error"> | E.Left<"payload-parse-error", DP.DataParserError>>;
 export {};

@@ -46,16 +46,6 @@ declare const tokenHandlerConfigDataParser: DP.extended.DataParserObjectExtended
             readonly coalescingValue: unknown;
             readonly checkers: readonly [];
         }>;
-        readonly tolerance: DP.extended.DataParserOptionalExtended<{
-            readonly inner: DP.extended.DataParserTimeExtended<{
-                readonly errorMessage?: string | undefined;
-                readonly coerce: boolean;
-                readonly checkers: readonly [];
-            }>;
-            readonly errorMessage?: string | undefined;
-            readonly coalescingValue: unknown;
-            readonly checkers: readonly [];
-        }>;
         readonly maxAge: DP.extended.DataParserTimeExtended<{
             readonly errorMessage?: string | undefined;
             readonly coerce: boolean;
@@ -98,7 +88,9 @@ type VerifyParams<GenericTokenHandlerConfig extends TokenHandlerConfig> = (Gener
     signer: InferredSignerParams;
 } : {}) & (GenericTokenHandlerConfig["cipher"] extends (params: infer InferredCipherParams) => any ? {
     cipher: InferredCipherParams;
-} : {});
+} : {}) & {
+    tolerance?: D.TheTime;
+};
 type CreateParams<GenericTokenHandlerConfig extends TokenHandlerConfig, GenericCustomHeader extends Record<string, unknown>> = (GenericTokenHandlerConfig["signer"] extends (params: infer InferredSignerParams) => any ? {
     signer: InferredSignerParams;
 } : {}) & (GenericTokenHandlerConfig["cipher"] extends (params: infer InferredCipherParams) => any ? {
@@ -113,9 +105,10 @@ type DecodeParams<GenericTokenHandlerConfig extends TokenHandlerConfig> = (Gener
 } : {});
 type ComputeParams<GenericParams extends object> = keyof GenericParams extends never ? [] : ExtractRequiredKeys<GenericParams> extends never ? [params?: GenericParams] : [params: GenericParams];
 export interface TokenHandlerMethods<GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig, GenericCustomPayload extends Record<string, unknown> = {}, GenericCustomHeader extends Record<string, unknown> = {}> {
-    verify(token: string, ...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-parse-error", DP.DataParserError> | E.Left<"signature-invalid"> | E.Left<"issue-invalid"> | E.Left<"subject-invalid"> | E.Left<"audience-invalid"> | E.Left<"expired">>;
-    decode(token: string, ...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-parse-error", DP.DataParserError>>;
+    verify(token: string, ...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"token-format"> | E.Left<"header-decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-decode-error"> | E.Left<"payload-parse-error", DP.DataParserError> | E.Left<"signature-invalid"> | E.Left<"issue-invalid"> | E.Left<"subject-invalid"> | E.Left<"audience-invalid"> | E.Left<"expired">>;
+    decode(token: string, ...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"token-format"> | E.Left<"header-decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-decode-error"> | E.Left<"payload-parse-error", DP.DataParserError>>;
     create(payload: GenericCustomPayload, ...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>): Promise<string | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-parse-error", DP.DataParserError>>;
+    createOrThrow(payload: GenericCustomPayload, ...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>): Promise<string>;
 }
 declare const tokenHandlerKind: import("@duplojs/utils").KindHandler<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>>;
 export type TokenHandler<GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig, GenericCustomPayload extends Record<string, unknown> = {}, GenericCustomHeader extends Record<string, unknown> = {}> = Kind<typeof tokenHandlerKind.definition> & TokenHandlerMethods<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>;
@@ -124,6 +117,12 @@ declare const TokenHandlerWrongConfig_base: new (params: {
 }, parentParams: readonly [message?: string | undefined, options?: ErrorOptions | undefined]) => Kind<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>, unknown> & Kind<import("@duplojs/utils").KindDefinition<"token-handler-wrong-config", unknown>, unknown> & Error;
 export declare class TokenHandlerWrongConfig extends TokenHandlerWrongConfig_base {
     constructor(error: DP.DataParserError);
+}
+declare const TokenHandlerCreateError_base: new (params: {
+    "@DuplojsJsonWebToken/token-handler"?: unknown;
+}, parentParams: readonly [message?: string | undefined, options?: ErrorOptions | undefined]) => Kind<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>, unknown> & Error & Kind<import("@duplojs/utils").KindDefinition<"token-handler-create-error", unknown>, unknown>;
+export declare class TokenHandlerCreateError extends TokenHandlerCreateError_base {
+    constructor(error: E.Left);
 }
 declare const SymbolErrorForbidden: unique symbol;
 type ForbiddenDataParser<GenericDataParserShape extends DP.DataParserObjectShape> = DP.Contain<DP.DataParserObject<SimplifyTopLevel<Omit<DP.DataParserDefinitionObject, "shape"> & {
@@ -141,7 +140,6 @@ type ForbiddenDataParser<GenericDataParserShape extends DP.DataParserObjectShape
  * - `params.issuer`: Default issuer claim
  * - `params.subject`: Default subject claim
  * - `params.audience`: Default audience claim
- * - `params.tolerance`: Expiration tolerance
  * - `params.now`: Current date override
  * - `params.customPayloadShape`: Custom payload shape
  * - `params.customHeaderShape`: Custom header shape
@@ -164,7 +162,7 @@ type ForbiddenDataParser<GenericDataParserShape extends DP.DataParserObjectShape
  * 	},
  * });
  * 
- * const token = await tokenHandler.create(
+ * const token = await tokenHandler.createOrThrow(
  * 	{
  * 		userId: "1",
  * 		role: "admin",
@@ -176,14 +174,15 @@ type ForbiddenDataParser<GenericDataParserShape extends DP.DataParserObjectShape
  * 	},
  * );
  * 
- * asserts(token, isType("string"));
+ * // send to client ...
  * 
- * const verifiedToken = await tokenHandler.verify(token);
+ * const verifiedToken = await tokenHandler.verify("receive-token");
  * ```
  * 
  * @remarks
  * - `verify` also checks issuer, subject, audience and expiration.
- * - Creator inputs move signer and cipher params to `create`, `decode` and `verify`.
+ * - `createOrThrow` throws when token creation returns a left value.
+ * - Creator inputs move signer and cipher params to `create`, `createOrThrow`, `decode` and `verify`.
  * - Custom shapes cannot redefine reserved JWT keys.
  * 
  * @see https://json-web-token.duplojs.dev/en/v0/api/tokenHandler
