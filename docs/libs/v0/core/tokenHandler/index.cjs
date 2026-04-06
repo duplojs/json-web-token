@@ -6,7 +6,6 @@ var create = require('./create.cjs');
 var decode = require('./decode.cjs');
 var verify = require('./verify.cjs');
 var parseTokenContent = require('./shared/parseTokenContent.cjs');
-var andThen = require('./shared/andThen.cjs');
 
 const tokenHandlerConfigDataParser = utils.DPE.object({
     issuer: utils.DPE.string().optional(),
@@ -67,12 +66,13 @@ function createTokenHandler(params) {
         headerParser,
         payloadParser,
     });
+    const createToken = create.createTokenHandlerCreateMethod({
+        config,
+        headerParser,
+        payloadParser,
+    });
     return tokenHandlerKind.setTo({
-        create: create.createTokenHandlerCreateMethod({
-            config,
-            headerParser,
-            payloadParser,
-        }),
+        create: createToken,
         decode: decode.createTokenHandlerDecodeMethod({
             config,
             parseTokenContent: parseTokenContent$1,
@@ -82,11 +82,8 @@ function createTokenHandler(params) {
             parseTokenContent: parseTokenContent$1,
         }),
         createOrThrow(payload, params) {
-            return andThen.andThen(create.createTokenHandlerCreateMethod({
-                config,
-                headerParser,
-                payloadParser,
-            })(payload, params), (value) => {
+            return createToken(payload, params)
+                .then((value) => {
                 if (utils.E.isLeft(value)) {
                     throw new TokenHandlerCreateError(value);
                 }

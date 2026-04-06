@@ -5,6 +5,12 @@
     "name": "ZeRiix",
     "url": "https://github.com/ZeRiix"
   },
+  "contributors": [
+    {
+      "name": "mathcovax",
+      "url": "https://github.com/mathcovax"
+    }
+  ],
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -38,8 +44,8 @@
     "dist",
     "README.md"
   ],
-  "dependencies": {
-    "@duplojs/utils": ">=1.5.15 <2.0.0"
+  "peerDependencies": {
+    "@duplojs/utils": ">=1.6.2 <2.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",

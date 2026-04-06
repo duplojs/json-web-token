@@ -1,8 +1,7 @@
-import { E, unwrap, D } from '@duplojs/utils';
+import { E, unwrap, D, callThen } from '@duplojs/utils';
 import { resolveSigner } from './shared/resolveSigner.mjs';
 import { resolveCipher } from './shared/resolveCipher.mjs';
 import { nowInSeconds } from './shared/nowInSeconds.mjs';
-import { andThen } from './shared/andThen.mjs';
 import { encodeBase64Url } from '../../utils/encoding/base64Url.mjs';
 
 function createTokenHandlerCreateMethod(params) {
@@ -33,14 +32,13 @@ function createTokenHandlerCreateMethod(params) {
         const encodedHeader = encodeBase64Url(JSON.stringify(unwrap(headerResult)));
         const encodedPayload = encodeBase64Url(JSON.stringify(unwrap(payloadResult)));
         const signingInput = `${encodedHeader}.${encodedPayload}`;
-        const encryptFlow = (signature) => {
+        return callThen(signer.sign(signingInput), (signature) => {
             const token = `${signingInput}.${signature}`;
             if (cipher !== undefined) {
                 return cipher.encrypt(token);
             }
             return token;
-        };
-        return andThen(signer.sign(signingInput), encryptFlow);
+        });
     };
 }
 

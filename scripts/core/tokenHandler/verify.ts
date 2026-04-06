@@ -1,7 +1,7 @@
-import { type D, E, type DP } from "@duplojs/utils";
+import { type D, E, type DP, callThen } from "@duplojs/utils";
 import { isBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
-import { andThen, getToleranceInSeconds, isAudienceValid, nowInSeconds, resolveCipher, resolveSigner, type ParseTokenContent } from "./shared";
+import { getToleranceInSeconds, isAudienceValid, nowInSeconds, resolveCipher, resolveSigner, type ParseTokenContent } from "./shared";
 
 interface CreateTokenHandlerVerifyMethodParams {
 	readonly config: TokenHandlerConfig;
@@ -36,85 +36,78 @@ export function createTokenHandlerVerifyMethod(
 		| E.Left<"audience-invalid">
 		| E.Left<"expired">
 		> {
-		const verifyFlow = (
-			token: string,
-		) => {
-			const [encodedHeader, encodedPayload, signature] = token.split(".");
-
-			if (!signature || !isBase64Url(signature)) {
-				return E.left("signature-invalid");
-			}
-
-			const decodeResult = parseTokenContent(
-				encodedHeader,
-				encodedPayload,
-			);
-
-			if (E.isLeft(decodeResult)) {
-				return decodeResult;
-			}
-
-			const signer = resolveSigner(config.signer, params?.signer);
-			const finishVerify = (
-				isValid: boolean,
-			) => {
-				if (!isValid) {
-					return E.left("signature-invalid");
-				}
-
-				if (
-					typeof config.issuer !== "undefined"
-					&& decodeResult.payload.iss !== config.issuer
-				) {
-					return E.left("issue-invalid");
-				}
-
-				if (
-					typeof config.subject !== "undefined"
-					&& decodeResult.payload.sub !== config.subject
-				) {
-					return E.left("subject-invalid");
-				}
-
-				if (
-					!isAudienceValid(
-						config.audience,
-						decodeResult.payload.aud,
-					)
-				) {
-					return E.left("audience-invalid");
-				}
-
-				if (
-					(decodeResult.payload.exp + getToleranceInSeconds(params?.tolerance))
-					< nowInSeconds(config.now)
-				) {
-					return E.left("expired");
-				}
-
-				return {
-					header: decodeResult.header,
-					payload: decodeResult.payload,
-				};
-			};
-
-			return andThen(
-				signer.verify(
-					`${encodedHeader}.${encodedPayload}`,
-					signature,
-				),
-				finishVerify,
-			);
-		};
-
 		const cipher = resolveCipher(config.cipher, params?.cipher);
 		const decryptedToken = cipher === undefined
 			? token
 			: cipher.decrypt(token);
 
-		return andThen(
+		return callThen(
 			decryptedToken,
-			verifyFlow,
+			(token: string) => {
+				const [encodedHeader, encodedPayload, signature] = token.split(".");
+
+				if (!signature || !isBase64Url(signature)) {
+					return E.left("signature-invalid");
+				}
+
+				const decodeResult = parseTokenContent(
+					encodedHeader,
+					encodedPayload,
+				);
+
+				if (E.isLeft(decodeResult)) {
+					return decodeResult;
+				}
+
+				const signer = resolveSigner(config.signer, params?.signer);
+
+				return callThen(
+					signer.verify(
+						`${encodedHeader}.${encodedPayload}`,
+						signature,
+					),
+					(isValid) => {
+						if (!isValid) {
+							return E.left("signature-invalid");
+						}
+
+						if (
+							typeof config.issuer !== "undefined"
+							&& decodeResult.payload.iss !== config.issuer
+						) {
+							return E.left("issue-invalid");
+						}
+
+						if (
+							typeof config.subject !== "undefined"
+							&& decodeResult.payload.sub !== config.subject
+						) {
+							return E.left("subject-invalid");
+						}
+
+						if (
+							!isAudienceValid(
+								config.audience,
+								decodeResult.payload.aud,
+							)
+						) {
+							return E.left("audience-invalid");
+						}
+
+						if (
+							(decodeResult.payload.exp + getToleranceInSeconds(params?.tolerance))
+							< nowInSeconds(config.now)
+						) {
+							return E.left("expired");
+						}
+
+						return {
+							header: decodeResult.header,
+							payload: decodeResult.payload,
+						};
+					},
+				);
+			},
 		);
 	};
 }

@@ -1,6 +1,6 @@
-import { E, type DP } from "@duplojs/utils";
+import { callThen, E, type DP } from "@duplojs/utils";
 import type { TokenHandlerConfig } from "./index";
-import { andThen, resolveCipher, type ParseTokenContent } from "./shared";
+import { resolveCipher, type ParseTokenContent } from "./shared";
 
 interface CreateTokenHandlerDecodeMethodParams {
 	readonly config: TokenHandlerConfig;
@@ -28,34 +28,30 @@ export function createTokenHandlerDecodeMethod(
 		| E.Left<"payload-decode-error">
 		| E.Left<"payload-parse-error", DP.DataParserError>
 		> {
-		const decodeFlow = (
-			token: string,
-		) => {
-			const [encodedHeader, encodedPayload] = token.split(".");
-
-			const decodeResult = parseTokenContent(
-				encodedHeader,
-				encodedPayload,
-			);
-
-			if (E.isLeft(decodeResult)) {
-				return decodeResult;
-			}
-
-			return {
-				header: decodeResult.header,
-				payload: decodeResult.payload,
-			};
-		};
-
 		const cipher = resolveCipher(config.cipher, params?.cipher);
 		const decryptedToken = cipher === undefined
 			? token
 			: cipher.decrypt(token);
 
-		return andThen(
+		return callThen(
 			decryptedToken,
-			decodeFlow,
+			(token) => {
+				const [encodedHeader, encodedPayload] = token.split(".");
+
+				const decodeResult = parseTokenContent(
+					encodedHeader,
+					encodedPayload,
+				);
+
+				if (E.isLeft(decodeResult)) {
+					return decodeResult;
+				}
+
+				return {
+					header: decodeResult.header,
+					payload: decodeResult.payload,
+				};
+			},
 		);
 	};
 }

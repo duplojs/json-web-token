@@ -1,8 +1,7 @@
 function resolveCipher(cipher, params) {
-    if (typeof cipher === "function") {
-        return cipher(params);
-    }
-    return cipher;
+    return typeof cipher === "function"
+        ? cipher(params)
+        : cipher;
 }
 
 export { resolveCipher };

@@ -104,14 +104,13 @@ type DecodeParams<GenericTokenHandlerConfig extends TokenHandlerConfig> = (Gener
     cipher: InferredCipherParams;
 } : {});
 type ComputeParams<GenericParams extends object> = keyof GenericParams extends never ? [] : ExtractRequiredKeys<GenericParams> extends never ? [params?: GenericParams] : [params: GenericParams];
-export interface TokenHandlerMethods<GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig, GenericCustomPayload extends Record<string, unknown> = {}, GenericCustomHeader extends Record<string, unknown> = {}> {
+declare const tokenHandlerKind: import("@duplojs/utils").KindHandler<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>>;
+export interface TokenHandler<GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig, GenericCustomPayload extends Record<string, unknown> = {}, GenericCustomHeader extends Record<string, unknown> = {}> extends Kind<typeof tokenHandlerKind.definition> {
     verify(token: string, ...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"token-format"> | E.Left<"header-decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-decode-error"> | E.Left<"payload-parse-error", DP.DataParserError> | E.Left<"signature-invalid"> | E.Left<"issue-invalid"> | E.Left<"subject-invalid"> | E.Left<"audience-invalid"> | E.Left<"expired">>;
     decode(token: string, ...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>): Promise<SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>> | E.Left<"token-format"> | E.Left<"header-decode-error"> | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-decode-error"> | E.Left<"payload-parse-error", DP.DataParserError>>;
     create(payload: GenericCustomPayload, ...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>): Promise<string | E.Left<"header-parse-error", DP.DataParserError> | E.Left<"payload-parse-error", DP.DataParserError>>;
     createOrThrow(payload: GenericCustomPayload, ...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>): Promise<string>;
 }
-declare const tokenHandlerKind: import("@duplojs/utils").KindHandler<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>>;
-export type TokenHandler<GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig, GenericCustomPayload extends Record<string, unknown> = {}, GenericCustomHeader extends Record<string, unknown> = {}> = Kind<typeof tokenHandlerKind.definition> & TokenHandlerMethods<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>;
 declare const TokenHandlerWrongConfig_base: new (params: {
     "@DuplojsJsonWebToken/token-handler"?: unknown;
 }, parentParams: readonly [message?: string | undefined, options?: ErrorOptions | undefined]) => Kind<import("@duplojs/utils").KindDefinition<"@DuplojsJsonWebToken/token-handler", unknown>, unknown> & Kind<import("@duplojs/utils").KindDefinition<"token-handler-wrong-config", unknown>, unknown> & Error;
@@ -188,8 +187,8 @@ type ForbiddenDataParser<GenericDataParserShape extends DP.DataParserObjectShape
  * @see https://json-web-token.duplojs.dev/en/v0/api/tokenHandler
  * 
  */
-export declare function createTokenHandler<GenericTokenHandlerConfig extends TokenHandlerConfig, GenericCustomPayload extends DP.DataParserObjectShape, GenericCustomHeader extends DP.DataParserObjectShape = {}>(params: GenericTokenHandlerConfig & {
-    readonly customPayloadShape: GenericCustomPayload & ForbiddenDataParser<GenericCustomPayload> & O.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>;
-    readonly customHeaderShape?: GenericCustomHeader & ForbiddenDataParser<GenericCustomHeader> & O.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>;
-}): TokenHandler<GenericTokenHandlerConfig, DP.DataParserObjectShapeOutput<GenericCustomPayload>, DP.DataParserObjectShapeOutput<GenericCustomHeader>>;
+export declare function createTokenHandler<GenericTokenHandlerConfig extends TokenHandlerConfig, GenericCustomPayload extends DP.DataParserObjectShape, GenericCustomHeader extends DP.DataParserObjectShape = {}>(params: (GenericTokenHandlerConfig & {
+    readonly customPayloadShape: (GenericCustomPayload & ForbiddenDataParser<GenericCustomPayload> & O.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>);
+    readonly customHeaderShape?: (GenericCustomHeader & ForbiddenDataParser<GenericCustomHeader> & O.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>);
+})): TokenHandler<GenericTokenHandlerConfig, DP.DataParserObjectShapeOutput<GenericCustomPayload>, DP.DataParserObjectShapeOutput<GenericCustomHeader>>;
 export {};

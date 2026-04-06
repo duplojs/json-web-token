@@ -4,7 +4,6 @@ var utils = require('@duplojs/utils');
 var resolveSigner = require('./shared/resolveSigner.cjs');
 var resolveCipher = require('./shared/resolveCipher.cjs');
 var nowInSeconds = require('./shared/nowInSeconds.cjs');
-var andThen = require('./shared/andThen.cjs');
 var base64Url = require('../../utils/encoding/base64Url.cjs');
 
 function createTokenHandlerCreateMethod(params) {
@@ -35,14 +34,13 @@ function createTokenHandlerCreateMethod(params) {
         const encodedHeader = base64Url.encodeBase64Url(JSON.stringify(utils.unwrap(headerResult)));
         const encodedPayload = base64Url.encodeBase64Url(JSON.stringify(utils.unwrap(payloadResult)));
         const signingInput = `${encodedHeader}.${encodedPayload}`;
-        const encryptFlow = (signature) => {
+        return utils.callThen(signer.sign(signingInput), (signature) => {
             const token = `${signingInput}.${signature}`;
             if (cipher !== undefined) {
                 return cipher.encrypt(token);
             }
             return token;
-        };
-        return andThen.andThen(signer.sign(signingInput), encryptFlow);
+        });
     };
 }
 

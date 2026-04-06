@@ -4,7 +4,6 @@ import { createTokenHandlerCreateMethod } from './create.mjs';
 import { createTokenHandlerDecodeMethod } from './decode.mjs';
 import { createTokenHandlerVerifyMethod } from './verify.mjs';
 import { createParseTokenContent } from './shared/parseTokenContent.mjs';
-import { andThen } from './shared/andThen.mjs';
 
 const tokenHandlerConfigDataParser = DPE.object({
     issuer: DPE.string().optional(),
@@ -65,12 +64,13 @@ function createTokenHandler(params) {
         headerParser,
         payloadParser,
     });
+    const createToken = createTokenHandlerCreateMethod({
+        config,
+        headerParser,
+        payloadParser,
+    });
     return tokenHandlerKind.setTo({
-        create: createTokenHandlerCreateMethod({
-            config,
-            headerParser,
-            payloadParser,
-        }),
+        create: createToken,
         decode: createTokenHandlerDecodeMethod({
             config,
             parseTokenContent,
@@ -80,11 +80,8 @@ function createTokenHandler(params) {
             parseTokenContent,
         }),
         createOrThrow(payload, params) {
-            return andThen(createTokenHandlerCreateMethod({
-                config,
-                headerParser,
-                payloadParser,
-            })(payload, params), (value) => {
+            return createToken(payload, params)
+                .then((value) => {
                 if (E.isLeft(value)) {
                     throw new TokenHandlerCreateError(value);
                 }

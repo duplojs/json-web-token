@@ -1,7 +1,7 @@
-import { D, E, unwrap, type DP } from "@duplojs/utils";
+import { callThen, D, E, unwrap, type DP } from "@duplojs/utils";
 import { encodeBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
-import { andThen, nowInSeconds, resolveCipher, resolveSigner, type ObjectParser, type TokenHeaderContent, type TokenPayloadContent } from "./shared";
+import { nowInSeconds, resolveCipher, resolveSigner, type ObjectParser, type TokenHeaderContent, type TokenPayloadContent } from "./shared";
 
 interface CreateTokenHandlerCreateMethodParams {
 	readonly config: TokenHandlerConfig;
@@ -53,21 +53,18 @@ export function createTokenHandlerCreateMethod(
 		const encodedHeader = encodeBase64Url(JSON.stringify(unwrap(headerResult)));
 		const encodedPayload = encodeBase64Url(JSON.stringify(unwrap(payloadResult)));
 		const signingInput = `${encodedHeader}.${encodedPayload}`;
-		const encryptFlow = (
-			signature: string,
-		) => {
-			const token = `${signingInput}.${signature}`;
 
-			if (cipher !== undefined) {
-				return cipher.encrypt(token);
-			}
-
-			return token;
-		};
-
-		return andThen(
+		return callThen(
 			signer.sign(signingInput),
-			encryptFlow,
+			(signature) => {
+				const token = `${signingInput}.${signature}`;
+
+				if (cipher !== undefined) {
+					return cipher.encrypt(token);
+				}
+
+				return token;
+			},
 		);
 	};
 }

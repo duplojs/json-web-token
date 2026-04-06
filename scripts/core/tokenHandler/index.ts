@@ -6,7 +6,7 @@ import type { ExtractRequiredKeys, UnknownToUndefined } from "../types";
 import { createTokenHandlerCreateMethod } from "./create";
 import { createTokenHandlerDecodeMethod } from "./decode";
 import { createTokenHandlerVerifyMethod } from "./verify";
-import { andThen, createParseTokenContent } from "./shared";
+import { createParseTokenContent } from "./shared";
 
 const tokenHandlerConfigDataParser = DPE.object({
 	issuer: DPE.string().optional(),
@@ -121,11 +121,13 @@ type ComputeParams<
 		? [params?: GenericParams]
 		: [params: GenericParams];
 
-export interface TokenHandlerMethods<
+const tokenHandlerKind = createJsonWebTokenKind("token-handler");
+
+export interface TokenHandler<
 	GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig,
 	GenericCustomPayload extends Record<string, unknown> = {},
 	GenericCustomHeader extends Record<string, unknown> = {},
-> {
+>extends Kind<typeof tokenHandlerKind.definition> {
 	verify(
 		token: string,
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
@@ -166,18 +168,6 @@ export interface TokenHandlerMethods<
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
 	): Promise<string>;
 }
-
-const tokenHandlerKind = createJsonWebTokenKind("token-handler");
-
-export type TokenHandler<
-	GenericTokenHandlerConfig extends TokenHandlerConfig = TokenHandlerConfig,
-	GenericCustomPayload extends Record<string, unknown> = {},
-	GenericCustomHeader extends Record<string, unknown> = {},
-> = Kind<typeof tokenHandlerKind.definition> & TokenHandlerMethods<
-	GenericTokenHandlerConfig,
-	GenericCustomPayload,
-	GenericCustomHeader
->;
 
 export class TokenHandlerWrongConfig extends kindHeritage(
 	"token-handler-wrong-config",
@@ -226,18 +216,21 @@ export function createTokenHandler<
 	GenericCustomPayload extends DP.DataParserObjectShape,
 	GenericCustomHeader extends DP.DataParserObjectShape = {},
 >(
-	params:
+	params: (
 		& GenericTokenHandlerConfig
 		& {
-			readonly customPayloadShape:
-			& GenericCustomPayload
-			& ForbiddenDataParser<GenericCustomPayload>
-			& O.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>;
-			readonly customHeaderShape?:
-			& GenericCustomHeader
-			& ForbiddenDataParser<GenericCustomHeader>
-			& O.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>;
-		},
+			readonly customPayloadShape:(
+				& GenericCustomPayload
+				& ForbiddenDataParser<GenericCustomPayload>
+				& O.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>
+			);
+			readonly customHeaderShape?: (
+				& GenericCustomHeader
+				& ForbiddenDataParser<GenericCustomHeader>
+				& O.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>
+			);
+		}
+	),
 ): TokenHandler<
 		GenericTokenHandlerConfig,
 		DP.DataParserObjectShapeOutput<GenericCustomPayload>,
@@ -282,13 +275,15 @@ export function createTokenHandler<
 		payloadParser,
 	});
 
+	const createToken = createTokenHandlerCreateMethod({
+		config,
+		headerParser,
+		payloadParser,
+	});
+
 	return tokenHandlerKind.setTo(
 		{
-			create: createTokenHandlerCreateMethod({
-				config,
-				headerParser,
-				payloadParser,
-			}),
+			create: createToken,
 			decode: createTokenHandlerDecodeMethod({
 				config,
 				parseTokenContent,
@@ -298,19 +293,13 @@ export function createTokenHandler<
 				parseTokenContent,
 			}),
 			createOrThrow(payload: object, params?: object) {
-				return andThen(
-					createTokenHandlerCreateMethod({
-						config,
-						headerParser,
-						payloadParser,
-					})(payload, params),
-					(value) => {
+				return createToken(payload, params)
+					.then((value) => {
 						if (E.isLeft(value)) {
 							throw new TokenHandlerCreateError(value);
 						}
 						return value;
-					},
-				);
+					});
 			},
 		} satisfies Record<keyof RemoveKind<TokenHandler>, any>,
 	) as never;

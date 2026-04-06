@@ -4,7 +4,6 @@ var utils = require('@duplojs/utils');
 var isAudienceValid = require('./shared/isAudienceValid.cjs');
 var getToleranceInSeconds = require('./shared/getToleranceInSeconds.cjs');
 var resolveCipher = require('./shared/resolveCipher.cjs');
-var andThen = require('./shared/andThen.cjs');
 var base64Url = require('../../utils/encoding/base64Url.cjs');
 var resolveSigner = require('./shared/resolveSigner.cjs');
 var nowInSeconds = require('./shared/nowInSeconds.cjs');
@@ -12,7 +11,11 @@ var nowInSeconds = require('./shared/nowInSeconds.cjs');
 function createTokenHandlerVerifyMethod(params) {
     const { config, parseTokenContent } = params;
     return async function (token, params) {
-        const verifyFlow = (token) => {
+        const cipher = resolveCipher.resolveCipher(config.cipher, params?.cipher);
+        const decryptedToken = cipher === undefined
+            ? token
+            : cipher.decrypt(token);
+        return utils.callThen(decryptedToken, (token) => {
             const [encodedHeader, encodedPayload, signature] = token.split(".");
             if (!signature || !base64Url.isBase64Url(signature)) {
                 return utils.E.left("signature-invalid");
@@ -22,7 +25,7 @@ function createTokenHandlerVerifyMethod(params) {
                 return decodeResult;
             }
             const signer = resolveSigner.resolveSigner(config.signer, params?.signer);
-            const finishVerify = (isValid) => {
+            return utils.callThen(signer.verify(`${encodedHeader}.${encodedPayload}`, signature), (isValid) => {
                 if (!isValid) {
                     return utils.E.left("signature-invalid");
                 }
@@ -45,14 +48,8 @@ function createTokenHandlerVerifyMethod(params) {
                     header: decodeResult.header,
                     payload: decodeResult.payload,
                 };
-            };
-            return andThen.andThen(signer.verify(`${encodedHeader}.${encodedPayload}`, signature), finishVerify);
-        };
-        const cipher = resolveCipher.resolveCipher(config.cipher, params?.cipher);
-        const decryptedToken = cipher === undefined
-            ? token
-            : cipher.decrypt(token);
-        return andThen.andThen(decryptedToken, verifyFlow);
+            });
+        });
     };
 }
 
