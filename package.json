@@ -45,7 +45,7 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@duplojs/utils": ">=1.6.2 <2.0.0"
+    "@duplojs/utils": ">=1.8.0 <2.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
