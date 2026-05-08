@@ -1,12 +1,15 @@
-import { callThen, D, E, unwrap, type DP } from "@duplojs/utils";
+import { callThen, unwrap } from "@duplojs/utils";
+import * as DD from "@duplojs/utils/date";
+import type * as DP from "@duplojs/utils/dataParser";
+import * as EE from "@duplojs/utils/either";
 import { encodeBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
-import { nowInSeconds, resolveCipher, resolveSigner, type ObjectParser, type TokenHeaderContent, type TokenPayloadContent } from "./shared";
+import { nowInSeconds, resolveCipher, resolveSigner, type TokenHeaderContent, type TokenPayloadContent } from "./shared";
 
 interface CreateTokenHandlerCreateMethodParams {
 	readonly config: TokenHandlerConfig;
-	readonly headerParser: ObjectParser<TokenHeaderContent>;
-	readonly payloadParser: ObjectParser<TokenPayloadContent>;
+	readonly headerParser: DP.DataParser<TokenHeaderContent>;
+	readonly payloadParser: DP.DataParser<TokenPayloadContent>;
 }
 
 export function createTokenHandlerCreateMethod(
@@ -23,19 +26,24 @@ export function createTokenHandlerCreateMethod(
 		},
 	): Promise<
 		| string
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-parse-error", DP.DataParserError>
 		> {
 		const signer = resolveSigner(config.signer, params?.signer);
 		const cipher = resolveCipher(config.cipher, params?.cipher);
 		const issuedAt = nowInSeconds(config.now);
-		const headerResult = headerParser.parse({
-			...(params?.header ?? {}),
+		const defaultHeaderValue = {
 			typ: "JWT",
 			alg: signer.algorithm,
-		});
-		if (E.isLeft(headerResult)) {
-			return E.left("header-parse-error", unwrap(headerResult));
+		};
+		const headerResult = (
+			params?.header && headerParser.parse({
+				...params.header,
+				...defaultHeaderValue,
+			})
+		) ?? defaultHeaderValue;
+		if (EE.isLeft(headerResult)) {
+			return EE.left("header-parse-error", unwrap(headerResult));
 		}
 
 		const payloadResult = payloadParser.parse({
@@ -43,11 +51,11 @@ export function createTokenHandlerCreateMethod(
 			sub: config.subject,
 			aud: config.audience,
 			iat: issuedAt,
-			exp: D.computeTime(config.maxAge, "second") + issuedAt,
+			exp: DD.computeTime(config.maxAge, "second") + issuedAt,
 			...payload,
 		});
-		if (E.isLeft(payloadResult)) {
-			return E.left("payload-parse-error", unwrap(payloadResult));
+		if (EE.isLeft(payloadResult)) {
+			return EE.left("payload-parse-error", unwrap(payloadResult));
 		}
 
 		const encodedHeader = encodeBase64Url(JSON.stringify(unwrap(headerResult)));

@@ -1,4 +1,4 @@
-import { A } from "@duplojs/utils";
+import * as AA from "@duplojs/utils/array";
 
 export function isAudienceValid(
 	expectedAudience: string | string[] | undefined,
@@ -12,8 +12,8 @@ export function isAudienceValid(
 		return false;
 	}
 
-	const expected = A.coalescing(expectedAudience);
-	const actual = A.coalescing(tokenAudience);
+	const expected = AA.coalescing(expectedAudience);
+	const actual = AA.coalescing(tokenAudience);
 
 	return expected.some(
 		(value) => actual.includes(value),

@@ -1,4 +1,7 @@
-import { type D, E, type DP, callThen } from "@duplojs/utils";
+import { callThen } from "@duplojs/utils";
+import * as EE from "@duplojs/utils/either";
+import type * as DP from "@duplojs/utils/dataParser";
+import type * as DD from "@duplojs/utils/date";
 import { isBase64Url } from "@scripts/utils";
 import type { TokenHandlerConfig } from "./index";
 import { getToleranceInSeconds, isAudienceValid, nowInSeconds, resolveCipher, resolveSigner, type ParseTokenContent } from "./shared";
@@ -18,23 +21,23 @@ export function createTokenHandlerVerifyMethod(
 		params?: {
 			signer?: object;
 			cipher?: object;
-			tolerance?: D.TheTime;
+			tolerance?: DD.TheTime;
 		},
 	): Promise<
 		| {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
 		}
-		| E.Left<"token-format">
-		| E.Left<"header-decode-error">
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-decode-error">
-		| E.Left<"payload-parse-error", DP.DataParserError>
-		| E.Left<"signature-invalid">
-		| E.Left<"issue-invalid">
-		| E.Left<"subject-invalid">
-		| E.Left<"audience-invalid">
-		| E.Left<"expired">
+		| EE.Left<"token-format">
+		| EE.Left<"header-decode-error">
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-decode-error">
+		| EE.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"signature-invalid">
+		| EE.Left<"issue-invalid">
+		| EE.Left<"subject-invalid">
+		| EE.Left<"audience-invalid">
+		| EE.Left<"expired">
 		> {
 		const cipher = resolveCipher(config.cipher, params?.cipher);
 		const decryptedToken = cipher === undefined
@@ -47,7 +50,7 @@ export function createTokenHandlerVerifyMethod(
 				const [encodedHeader, encodedPayload, signature] = token.split(".");
 
 				if (!signature || !isBase64Url(signature)) {
-					return E.left("signature-invalid");
+					return EE.left("signature-invalid");
 				}
 
 				const decodeResult = parseTokenContent(
@@ -55,7 +58,7 @@ export function createTokenHandlerVerifyMethod(
 					encodedPayload,
 				);
 
-				if (E.isLeft(decodeResult)) {
+				if (EE.isLeft(decodeResult)) {
 					return decodeResult;
 				}
 
@@ -68,21 +71,21 @@ export function createTokenHandlerVerifyMethod(
 					),
 					(isValid) => {
 						if (!isValid) {
-							return E.left("signature-invalid");
+							return EE.left("signature-invalid");
 						}
 
 						if (
 							typeof config.issuer !== "undefined"
 							&& decodeResult.payload.iss !== config.issuer
 						) {
-							return E.left("issue-invalid");
+							return EE.left("issue-invalid");
 						}
 
 						if (
 							typeof config.subject !== "undefined"
 							&& decodeResult.payload.sub !== config.subject
 						) {
-							return E.left("subject-invalid");
+							return EE.left("subject-invalid");
 						}
 
 						if (
@@ -91,14 +94,14 @@ export function createTokenHandlerVerifyMethod(
 								decodeResult.payload.aud,
 							)
 						) {
-							return E.left("audience-invalid");
+							return EE.left("audience-invalid");
 						}
 
 						if (
 							(decodeResult.payload.exp + getToleranceInSeconds(params?.tolerance))
 							< nowInSeconds(config.now)
 						) {
-							return E.left("expired");
+							return EE.left("expired");
 						}
 
 						return {

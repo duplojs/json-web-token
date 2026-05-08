@@ -1,4 +1,6 @@
-import { callThen, E, type DP } from "@duplojs/utils";
+import { callThen } from "@duplojs/utils";
+import * as EE from "@duplojs/utils/either";
+import type * as DP from "@duplojs/utils/dataParser";
 import type { TokenHandlerConfig } from "./index";
 import { resolveCipher, type ParseTokenContent } from "./shared";
 
@@ -22,11 +24,11 @@ export function createTokenHandlerDecodeMethod(
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
 		}
-		| E.Left<"token-format">
-		| E.Left<"header-decode-error">
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-decode-error">
-		| E.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"token-format">
+		| EE.Left<"header-decode-error">
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-decode-error">
+		| EE.Left<"payload-parse-error", DP.DataParserError>
 		> {
 		const cipher = resolveCipher(config.cipher, params?.cipher);
 		const decryptedToken = cipher === undefined
@@ -43,7 +45,7 @@ export function createTokenHandlerDecodeMethod(
 					encodedPayload,
 				);
 
-				if (E.isLeft(decodeResult)) {
+				if (EE.isLeft(decodeResult)) {
 					return decodeResult;
 				}
 

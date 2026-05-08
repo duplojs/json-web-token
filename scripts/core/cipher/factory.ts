@@ -1,4 +1,4 @@
-import { type RemoveKind, type Kind, type MaybePromise } from "@duplojs/utils";
+import type { RemoveKind, Kind, MaybePromise } from "@duplojs/utils";
 import { createJsonWebTokenKind } from "@scripts/kind";
 
 const cipherKind = createJsonWebTokenKind("cipher");

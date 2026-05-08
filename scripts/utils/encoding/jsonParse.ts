@@ -1,4 +1,4 @@
-import { type Json } from "@duplojs/utils";
+import type { Json } from "@duplojs/utils";
 
 export function jsonParse(value: string) {
 	try {

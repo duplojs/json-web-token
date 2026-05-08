@@ -1,4 +1,8 @@
-import { type D, type DP, unwrap, DPE, E, type Kind, type SimplifyTopLevel, kindHeritage, type O, type RemoveKind } from "@duplojs/utils";
+import { unwrap, type Kind, type SimplifyTopLevel, kindHeritage, type RemoveKind, forward } from "@duplojs/utils";
+import type * as DD from "@duplojs/utils/date";
+import * as EE from "@duplojs/utils/either";
+import * as DP from "@duplojs/utils/dataParser";
+import type * as OO from "@duplojs/utils/object";
 import { createJsonWebTokenKind } from "@scripts/kind";
 import type { CreateSigner, Signer } from "../signer";
 import type { CreateCipher, Cipher } from "../cipher";
@@ -8,14 +12,16 @@ import { createTokenHandlerDecodeMethod } from "./decode";
 import { createTokenHandlerVerifyMethod } from "./verify";
 import { createParseTokenContent } from "./shared";
 
-const tokenHandlerConfigDataParser = DPE.object({
-	issuer: DPE.string().optional(),
-	audience: DPE.union([
-		DPE.string(),
-		DPE.string().array(),
-	]).optional(),
-	subject: DPE.string().optional(),
-	maxAge: DPE.time(),
+const tokenHandlerConfigDataParser = DP.object({
+	issuer: DP.optional(DP.string()),
+	audience: DP.optional(
+		DP.union([
+			DP.string(),
+			DP.array(DP.string()),
+		]),
+	),
+	subject: DP.optional(DP.string()),
+	maxAge: DP.time(),
 });
 
 export type TokenHandlerConfig<
@@ -23,7 +29,7 @@ export type TokenHandlerConfig<
 	GenericCipherAlgorithm extends string = string,
 > = SimplifyTopLevel<
 	& {
-		now?(): D.TheDate;
+		now?(): DD.TheDate;
 		signer: Signer<GenericSignerAlgorithm> | CreateSigner<GenericSignerAlgorithm, any>;
 		cipher?: Cipher<GenericCipherAlgorithm> | CreateCipher<GenericCipherAlgorithm, any>;
 	}
@@ -79,7 +85,7 @@ type VerifyParams<
 			: {}
 	)
 	& {
-		tolerance?: D.TheTime;
+		tolerance?: DD.TheTime;
 	};
 
 type CreateParams<
@@ -133,35 +139,35 @@ export interface TokenHandler<
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
 	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
-		| E.Left<"token-format">
-		| E.Left<"header-decode-error">
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-decode-error">
-		| E.Left<"payload-parse-error", DP.DataParserError>
-		| E.Left<"signature-invalid">
-		| E.Left<"issue-invalid">
-		| E.Left<"subject-invalid">
-		| E.Left<"audience-invalid">
-		| E.Left<"expired">
+		| EE.Left<"token-format">
+		| EE.Left<"header-decode-error">
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-decode-error">
+		| EE.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"signature-invalid">
+		| EE.Left<"issue-invalid">
+		| EE.Left<"subject-invalid">
+		| EE.Left<"audience-invalid">
+		| EE.Left<"expired">
 	>;
 	decode(
 		token: string,
 		...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>
 	): Promise<
 		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
-		| E.Left<"token-format">
-		| E.Left<"header-decode-error">
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-decode-error">
-		| E.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"token-format">
+		| EE.Left<"header-decode-error">
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-decode-error">
+		| EE.Left<"payload-parse-error", DP.DataParserError>
 	>;
 	create(
 		payload: GenericCustomPayload,
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
 	): Promise<
 		| string
-		| E.Left<"header-parse-error", DP.DataParserError>
-		| E.Left<"payload-parse-error", DP.DataParserError>
+		| EE.Left<"header-parse-error", DP.DataParserError>
+		| EE.Left<"payload-parse-error", DP.DataParserError>
 	>;
 	createOrThrow(
 		payload: GenericCustomPayload,
@@ -184,8 +190,8 @@ export class TokenHandlerCreateError extends kindHeritage(
 	tokenHandlerKind,
 	Error,
 ) {
-	public constructor(error: E.Left) {
-		super({}, [`Token creation failed with "${E.informationKind.getValue(error)}".`]);
+	public constructor(error: EE.Left) {
+		super({}, [`Token creation failed with "${EE.informationKind.getValue(error)}".`]);
 	}
 }
 
@@ -222,12 +228,12 @@ export function createTokenHandler<
 			readonly customPayloadShape:(
 				& GenericCustomPayload
 				& ForbiddenDataParser<GenericCustomPayload>
-				& O.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>
+				& OO.ForbiddenKey<GenericCustomPayload, DefaultTokenPayloadKeys>
 			);
 			readonly customHeaderShape?: (
 				& GenericCustomHeader
 				& ForbiddenDataParser<GenericCustomHeader>
-				& O.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>
+				& OO.ForbiddenKey<GenericCustomHeader, DefaultTokenHeaderKeys>
 			);
 		}
 	),
@@ -242,7 +248,7 @@ export function createTokenHandler<
 		subject: params.subject,
 		maxAge: params.maxAge,
 	});
-	if (E.isLeft(configResult)) {
+	if (EE.isLeft(configResult)) {
 		throw new TokenHandlerWrongConfig(unwrap(configResult));
 	}
 
@@ -253,21 +259,23 @@ export function createTokenHandler<
 		cipher: params.cipher,
 	};
 
-	const payloadParser = DPE.object({
-		iss: DPE.string().optional(),
-		sub: DPE.string().optional(),
-		aud: DPE.union([
-			DPE.string(),
-			DPE.string().array(),
-		]).optional(),
-		exp: DPE.number(),
-		iat: DPE.number(),
-		...params.customPayloadShape,
+	const payloadParser = DP.object({
+		iss: DP.optional(DP.string()),
+		sub: DP.optional(DP.string()),
+		aud: DP.optional(
+			DP.union([
+				DP.string(),
+				DP.array(DP.string()),
+			]),
+		),
+		exp: DP.number(),
+		iat: DP.number(),
+		...forward<DP.DataParserObjectShape>(params.customPayloadShape),
 	});
-	const headerParser = DPE.object({
+	const headerParser = DP.object({
 		...(params.customHeaderShape ?? {}),
-		typ: DPE.literal("JWT"),
-		alg: DPE.literal(config.signer.algorithm),
+		typ: DP.literal("JWT"),
+		alg: DP.literal(config.signer.algorithm),
 	});
 
 	const parseTokenContent = createParseTokenContent({
@@ -295,7 +303,7 @@ export function createTokenHandler<
 			createOrThrow(payload: object, params?: object) {
 				return createToken(payload, params)
 					.then((value) => {
-						if (E.isLeft(value)) {
+						if (EE.isLeft(value)) {
 							throw new TokenHandlerCreateError(value);
 						}
 						return value;

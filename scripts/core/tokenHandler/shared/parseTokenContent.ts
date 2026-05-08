@@ -1,4 +1,6 @@
-import { E, unwrap, type DP } from "@duplojs/utils";
+import { unwrap } from "@duplojs/utils";
+import * as EE from "@duplojs/utils/either";
+import type * as DP from "@duplojs/utils/dataParser";
 import { decodeBase64Url, decodeText, isBase64Url, jsonParse } from "@scripts/utils";
 
 export type TokenHeaderContent = {
@@ -6,23 +8,18 @@ export type TokenHeaderContent = {
 	alg: string;
 } & Record<string, unknown>;
 
-export type TokenPayloadContent = {
+export interface TokenPayloadContent {
+	[key: string]: unknown;
 	iss?: string;
 	sub?: string;
 	aud?: string | string[];
 	exp: number;
 	iat: number;
-} & Record<string, unknown>;
-
-export interface ObjectParser<
-	GenericOutput extends object = object,
-> {
-	parse(value: unknown): any;
 }
 
 interface CreateParseTokenContentParams {
-	readonly headerParser: ObjectParser<TokenHeaderContent>;
-	readonly payloadParser: ObjectParser<TokenPayloadContent>;
+	readonly headerParser: DP.DataParser<TokenHeaderContent>;
+	readonly payloadParser: DP.DataParser<TokenPayloadContent>;
 }
 
 export type ParseTokenContentResult =
@@ -30,11 +27,11 @@ export type ParseTokenContentResult =
 		header: TokenHeaderContent;
 		payload: TokenPayloadContent;
 	}
-	| E.Left<"token-format">
-	| E.Left<"header-decode-error">
-	| E.Left<"header-parse-error", DP.DataParserError>
-	| E.Left<"payload-decode-error">
-	| E.Left<"payload-parse-error", DP.DataParserError>;
+	| EE.Left<"token-format">
+	| EE.Left<"header-decode-error">
+	| EE.Left<"header-parse-error", DP.DataParserError>
+	| EE.Left<"payload-decode-error">
+	| EE.Left<"payload-parse-error", DP.DataParserError>;
 
 export type ParseTokenContent = (
 	encodedHeader: string | undefined,
@@ -53,31 +50,31 @@ export function createParseTokenContent(
 			|| !isBase64Url(encodedHeader)
 			|| !isBase64Url(encodedPayload)
 		) {
-			return E.left("token-format");
+			return EE.left("token-format");
 		}
 
 		const headerJsonResult = jsonParse(
 			decodeText(decodeBase64Url(encodedHeader)),
 		);
 		if (headerJsonResult === undefined) {
-			return E.left("header-decode-error");
+			return EE.left("header-decode-error");
 		}
 
 		const headerResult = headerParser.parse(headerJsonResult);
-		if (E.isLeft(headerResult)) {
-			return E.left("header-parse-error", unwrap(headerResult));
+		if (EE.isLeft(headerResult)) {
+			return EE.left("header-parse-error", unwrap(headerResult));
 		}
 
 		const payloadJsonResult = jsonParse(
 			decodeText(decodeBase64Url(encodedPayload)),
 		);
 		if (payloadJsonResult === undefined) {
-			return E.left("payload-decode-error");
+			return EE.left("payload-decode-error");
 		}
 
 		const payloadResult = payloadParser.parse(payloadJsonResult);
-		if (E.isLeft(payloadResult)) {
-			return E.left("payload-parse-error", unwrap(payloadResult));
+		if (EE.isLeft(payloadResult)) {
+			return EE.left("payload-parse-error", unwrap(payloadResult));
 		}
 
 		return {

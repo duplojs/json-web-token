@@ -1,7 +1,7 @@
-import { D } from "@duplojs/utils";
+import * as DD from "@duplojs/utils/date";
 
-export function nowInSeconds(func?: () => D.TheDate) {
-	const now = func?.() ?? D.now();
+export function nowInSeconds(func?: () => DD.TheDate) {
+	const now = func?.() ?? DD.now();
 
-	return Math.floor(D.toTimestamp(now) / 1000);
+	return Math.floor(DD.toTimestamp(now) / 1000);
 }

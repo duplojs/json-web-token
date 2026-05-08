@@ -1,4 +1,3 @@
-
 export type ExtractRequiredKeys<
 	GenericObject extends object,
 > = {

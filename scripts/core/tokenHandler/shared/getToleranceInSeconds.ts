@@ -1,7 +1,7 @@
-import { D } from "@duplojs/utils";
+import * as DD from "@duplojs/utils/date";
 
-export function getToleranceInSeconds(tolerance?: D.TheTime) {
+export function getToleranceInSeconds(tolerance?: DD.TheTime) {
 	return tolerance
-		? D.computeTime(tolerance, "second")
+		? DD.computeTime(tolerance, "second")
 		: 0;
 }

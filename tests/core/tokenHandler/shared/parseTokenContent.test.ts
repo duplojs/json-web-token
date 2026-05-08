@@ -1,12 +1,12 @@
-import { E } from "@duplojs/utils";
+import { type DP, E } from "@duplojs/utils";
 import { encodeBase64Url } from "@scripts";
 import { createParseTokenContent } from "@scripts/core/tokenHandler/shared";
 
 describe("createParseTokenContent", () => {
 	it("returns token format without parts", () => {
 		const parseTokenContent = createParseTokenContent({
-			headerParser: { parse: vi.fn() },
-			payloadParser: { parse: vi.fn() },
+			headerParser: { parse: vi.fn() } as never,
+			payloadParser: { parse: vi.fn() } as never,
 		});
 
 		expect(parseTokenContent(undefined, "payload")).toEqual(E.left("token-format"));
@@ -15,8 +15,8 @@ describe("createParseTokenContent", () => {
 
 	it("returns token format with invalid base64url", () => {
 		const parseTokenContent = createParseTokenContent({
-			headerParser: { parse: vi.fn() },
-			payloadParser: { parse: vi.fn() },
+			headerParser: { parse: vi.fn() } as never,
+			payloadParser: { parse: vi.fn() } as never,
 		});
 
 		expect(parseTokenContent("@@", "payload")).toEqual(E.left("token-format"));
@@ -25,8 +25,8 @@ describe("createParseTokenContent", () => {
 
 	it("returns header decode error with invalid header json", () => {
 		const parseTokenContent = createParseTokenContent({
-			headerParser: { parse: vi.fn() },
-			payloadParser: { parse: vi.fn() },
+			headerParser: { parse: vi.fn() } as never,
+			payloadParser: { parse: vi.fn() } as never,
 		});
 
 		expect(
@@ -41,13 +41,13 @@ describe("createParseTokenContent", () => {
 		const parserError = { type: "header" };
 		const headerParser = {
 			parse: vi.fn(() => E.left("invalid-header", parserError)),
-		};
+		} as any;
 		const payloadParser = {
 			parse: vi.fn(() => ({
 				exp: 1,
 				iat: 1,
 			})),
-		};
+		} as never;
 		const parseTokenContent = createParseTokenContent({
 			headerParser,
 			payloadParser,
@@ -72,8 +72,8 @@ describe("createParseTokenContent", () => {
 					typ: "JWT",
 					alg: "HS256",
 				})),
-			},
-			payloadParser: { parse: vi.fn() },
+			} as never,
+			payloadParser: { parse: vi.fn() } as never,
 		});
 
 		expect(
@@ -91,10 +91,10 @@ describe("createParseTokenContent", () => {
 				typ: "JWT",
 				alg: "HS256",
 			})),
-		};
+		} as never;
 		const payloadParser = {
 			parse: vi.fn(() => E.left("invalid-payload", parserError)),
-		};
+		} as any;
 		const parseTokenContent = createParseTokenContent({
 			headerParser,
 			payloadParser,
@@ -124,10 +124,10 @@ describe("createParseTokenContent", () => {
 		};
 		const headerParser = {
 			parse: vi.fn(() => header),
-		};
+		} as never;
 		const payloadParser = {
 			parse: vi.fn(() => payload),
-		};
+		} as never;
 		const parseTokenContent = createParseTokenContent({
 			headerParser,
 			payloadParser,
