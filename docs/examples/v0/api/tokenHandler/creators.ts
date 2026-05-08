@@ -1,5 +1,5 @@
 import { D, DPE } from "@duplojs/utils";
-import { Cipher, Signer, createTokenHandler } from "@duplojs/json-web-token";
+import { Cipher, Signer, createTokenHandler } from "@json-web-token/v0";
 
 const tokenHandler = createTokenHandler({
 	maxAge: D.createTime(10, "minute"),

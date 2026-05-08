@@ -1,4 +1,4 @@
-import { Signer } from "@duplojs/json-web-token";
+import { Signer } from "@json-web-token/v0";
 
 const createCustomSigner = Signer.factory(
 	"CUSTOM",

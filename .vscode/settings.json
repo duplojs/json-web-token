@@ -23,7 +23,8 @@
 	"typescript.updateImportsOnFileMove.enabled": "prompt",
 	"javascript.updateImportsOnFileMove.enabled": "prompt",
 	"cSpell.words": [
-		"RSAOAEP"
+		"RSAOAEP",
+		"shikijs"
 	],
 	"js/ts.tsdk.path": "node_modules/typescript/lib",
 }

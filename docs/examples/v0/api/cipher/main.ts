@@ -1,4 +1,4 @@
-import { Cipher, decodeBase64Url, decodeText, encodeBase64Url } from "@duplojs/json-web-token";
+import { Cipher, decodeBase64Url, decodeText, encodeBase64Url } from "@json-web-token/v0";
 
 const createCustomCipher = Cipher.factory(
 	"CUSTOM",

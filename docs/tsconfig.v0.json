@@ -2,9 +2,6 @@
   "extends": "../tsconfig.app.json",
   "compilerOptions": {
 	"baseUrl": "./",
-	"paths": {
-		"@duplojs/json-web-token": ["libs/v0/index"],
-	},
 	"types": ["web"]
   },
   "include": ["examples/v0/**/*.ts", "libs/v0/**/*.d.ts"],

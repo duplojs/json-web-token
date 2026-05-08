@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
 import { ModuleDetectionKind, ModuleKind, ModuleResolutionKind } from "typescript";
 import { groupIconMdPlugin, groupIconVitePlugin } from "vitepress-plugin-group-icons";
-import { A, innerPipe, S } from "@duplojs/utils";
+import { Path, S } from "@duplojs/utils";
 
 const hostname = "https://json-web-token.duplojs.dev";
 const ogImage = new URL("/images/ogImage.png", hostname).toString();
@@ -89,24 +89,13 @@ export default defineConfig({
 		codeTransformers: [
 			{
 				name: "duplo-version-transformer",
-				preprocess: innerPipe(
-					S.replace(
-						/\/\/ @version: (?<version>[0-9]+)/,
-						({ namedGroups }) => A.join(
-							[
-								"// @filename: @duplojs/json-web-token.ts",
-								`export * from "@v${namedGroups?.version ?? ""}";`,
-
-								"// @filename: index.ts",
-								"// ---cut---",
-							],
-							"\n",
-						),
-					),
-					S.replace(
-						/ ?@ts-expect-error/g,
-						"",
-					),
+				preprocess: S.replace(
+					/ ?@ts-expect-error/g,
+					"",
+				),
+				postprocess: S.replace(
+					/"@json-web-token\/v([0-9]+)/g,
+					"\"@duplojs/json-web-token",
 				),
 			},
 			transformerTwoslash({
@@ -115,9 +104,19 @@ export default defineConfig({
 						module: ModuleKind.ESNext,
 						moduleResolution: ModuleResolutionKind.Bundler,
 						moduleDetection: ModuleDetectionKind.Force,
-						paths: {
-							"@v0": ["libs/v0/index"],
-						},
+						allowArbitraryExtensions: true,
+						strict: true,
+						noImplicitAny: true,
+						strictNullChecks: true,
+						strictFunctionTypes: true,
+						strictBindCallApply: true,
+						strictPropertyInitialization: true,
+						noImplicitThis: true,
+						useUnknownInCatchVariables: true,
+						alwaysStrict: true,
+						noImplicitReturns: true,
+						noUncheckedIndexedAccess: true,
+						noImplicitOverride: true,
 					},
 				},
 			}),
@@ -126,6 +125,11 @@ export default defineConfig({
 	},
 	vite: {
 		plugins: [groupIconVitePlugin()],
+		resolve: {
+			alias: {
+				"@": Path.resolveRelative([import.meta.dirname, ".."]),
+			},
+		},
 	},
 	transformPageData(pageData) {
 		const frontmatter = pageData.frontmatter ?? {};
