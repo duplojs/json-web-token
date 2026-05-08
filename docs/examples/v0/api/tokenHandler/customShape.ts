@@ -1,4 +1,4 @@
-import { asserts, D, DPE } from "@duplojs/utils";
+import { D, DPE } from "@duplojs/utils";
 import { Signer, createTokenHandler } from "@duplojs/json-web-token";
 
 const tokenHandler = createTokenHandler({
@@ -14,7 +14,7 @@ const tokenHandler = createTokenHandler({
 	},
 });
 
-const token = await tokenHandler.create(
+const token = await tokenHandler.createOrThrow(
 	{
 		userId: "42",
 		role: "admin",

@@ -38,9 +38,11 @@ Au moment du `create`, le handler ajoute lui-même les claims standards comme `i
 Au moment du `verify`, il redécode le token, vérifie la signature, puis applique les contrôles de configuration comme l'expiration, l'issuer, le subject ou l'audience.
 :::
 
-::: tip `create` ou `createOrThrow`
-`create` retourne un `Left` si la création échoue.  
-`createOrThrow` fait la même chose, mais lève une erreur si la création échoue. C'est utile si tu préfères un flux orienté exception à un flux orienté `Either`.
+::: tip Pourquoi `createOrThrow` existe ?
+En pratique, on recommande `createOrThrow`.  
+Si la création d'un token échoue, c'est généralement un problème d'implémentation ou de configuration côté serveur, pas un scénario métier attendu. Dans ce cas, lever une erreur immédiatement est un comportement sain.
+
+À l'inverse, `verify` n'a pas de variante `orThrow` : un échec de vérification peut être parfaitement normal (signature invalide, token expiré, claims incohérents, etc.). Ce n'est pas forcément une erreur d'implémentation, donc ce cas reste géré comme un résultat métier.
 :::
 
 ## Paramètres

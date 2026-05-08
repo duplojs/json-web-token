@@ -38,9 +38,11 @@ When `create` runs, the handler adds standard claims such as `iat` and `exp`, th
 When `verify` runs, it decodes the token again, verifies the signature, then applies configuration checks such as expiration, issuer, subject, or audience.
 :::
 
-::: tip `create` or `createOrThrow`
-`create` returns a `Left` when token creation fails.  
-`createOrThrow` does the same thing, but throws when creation fails. It is useful if you prefer an exception-based flow over an `Either`-based flow.
+::: tip Why prefer `createOrThrow`
+In practice, we recommend `createOrThrow`.  
+If token creation fails, it is usually a server-side implementation or configuration issue, not an expected business scenario. In that case, throwing immediately is often the healthiest behavior.
+
+By contrast, `verify` has no `orThrow` variant: a verification failure can be perfectly normal (invalid signature, expired token, inconsistent claims, etc.). It is not necessarily an implementation error, so this case remains handled as a business-level result.
 :::
 
 ## Parameters
