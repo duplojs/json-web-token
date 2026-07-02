@@ -9,6 +9,6 @@
     }
   },
   "peerDependencies": {
-    "@duplojs/utils": ">=1.8.0 <2.0.0"
+    "@duplojs/utils": ">=1.10.3 <2.0.0"
   }
 }

@@ -11,5 +11,5 @@ export declare function createTokenHandlerCreateMethod(params: CreateTokenHandle
     header?: object;
     signer?: object;
     cipher?: object;
-}) => Promise<string | EE.Left<"header-parse-error", DP.DataParserError> | EE.Left<"payload-parse-error", DP.DataParserError>>;
+}) => Promise<EE.Right<"token-created", string> | EE.Left<"header-parse-error", DP.DataParserError> | EE.Left<"payload-parse-error", DP.DataParserError>>;
 export {};

@@ -34,8 +34,10 @@ In other words, the goal is to build a clear contract that you can reuse.
 ```
 
 ::: tip What happens here
-When `create` runs, the handler adds standard claims such as `iat` and `exp`, then signs the content.  
+When `createOrThrow` runs, the handler adds standard claims such as `iat` and `exp`, then signs the content.  
 When `verify` runs, it decodes the token again, verifies the signature, then applies configuration checks such as expiration, issuer, subject, or audience.
+
+`verify` returns an either result. On success, the result information is `token-verified` and the value contains the decoded header and payload.
 :::
 
 ::: tip Why prefer `createOrThrow`
@@ -63,10 +65,10 @@ interface TokenHandlerParams {
 
 The returned handler then exposes four methods:
 
-- `create`
-- `createOrThrow`
-- `verify`
-- `decode`
+- `create`: creates a token and returns `token-created` or a creation error.
+- `createOrThrow`: creates a token string directly, or throws when creation fails.
+- `verify`: verifies signature and configured claims, then returns `token-verified` or a verification error.
+- `decode`: reads header and payload without checking signature or claims, then returns `token-decoded` or a decode error.
 
 ## Example with custom shapes
 
@@ -78,6 +80,8 @@ The returned handler then exposes four methods:
 ::: tip What happens here
 `customPayloadShape` and `customHeaderShape` define what your application is allowed to put into the token.  
 Reserved JWT keys such as `exp`, `iat`, `iss`, `sub`, `aud`, `typ`, or `alg` remain managed by the handler itself.
+
+`decode` only reads the token content. It is useful for inspection, but it should not be used to trust a received token.
 :::
 
 ## Example with creators
@@ -90,4 +94,6 @@ Reserved JWT keys such as `exp`, `iat`, `iss`, `sub`, `aud`, `typ`, or `alg` rem
 ::: tip What happens here
 When you pass a `CreateSigner` or a `CreateCipher` instead of an already configured instance, the parameters move to `create`, `createOrThrow`, `verify`, and `decode`.  
 This lets you create the handler only once, while injecting secrets, keys, or other required parameters later.
+
+The success result stays the same: `create` returns `token-created`, `decode` returns `token-decoded`, and `verify` returns `token-verified`.
 :::

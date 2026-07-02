@@ -39,14 +39,14 @@ const tokenHandlerConfigDataParser = DP__namespace.object({
     maxAge: DP__namespace.time(),
 });
 const tokenHandlerKind = kind.createJsonWebTokenKind("token-handler");
-class TokenHandlerWrongConfig extends utils.kindHeritage("token-handler-wrong-config", tokenHandlerKind, Error) {
+class TokenHandlerWrongConfig extends utils.kindClass(tokenHandlerKind, Error) {
     constructor(error) {
-        super({}, ["Token handler config is wrong. Please check your definition shape."]);
+        super(undefined, "Token handler config is wrong. Please check your definition shape.");
     }
 }
-class TokenHandlerCreateError extends utils.kindHeritage("token-handler-create-error", tokenHandlerKind, Error) {
+class TokenHandlerCreateError extends utils.kindClass(tokenHandlerKind, Error) {
     constructor(error) {
-        super({}, [`Token creation failed with "${EE__namespace.informationKind.getValue(error)}".`]);
+        super(undefined, `Token creation failed with "${EE__namespace.informationKind.getValue(error)}".`);
     }
 }
 /**
@@ -103,13 +103,13 @@ function createTokenHandler(params) {
             config,
             parseTokenContent: parseTokenContent$1,
         }),
-        createOrThrow(payload, params) {
+        async createOrThrow(payload, params) {
             return createToken(payload, params)
                 .then((value) => {
                 if (EE__namespace.isLeft(value)) {
                     throw new TokenHandlerCreateError(value);
                 }
-                return value;
+                return utils.unwrap(value);
             });
         },
     });

@@ -1,4 +1,4 @@
-import { kindHeritage, unwrap, forward } from '@duplojs/utils';
+import { kindClass, unwrap, forward } from '@duplojs/utils';
 import * as EE from '@duplojs/utils/either';
 import * as DP from '@duplojs/utils/dataParser';
 import { createJsonWebTokenKind } from '../../kind.mjs';
@@ -17,14 +17,14 @@ const tokenHandlerConfigDataParser = DP.object({
     maxAge: DP.time(),
 });
 const tokenHandlerKind = createJsonWebTokenKind("token-handler");
-class TokenHandlerWrongConfig extends kindHeritage("token-handler-wrong-config", tokenHandlerKind, Error) {
+class TokenHandlerWrongConfig extends kindClass(tokenHandlerKind, Error) {
     constructor(error) {
-        super({}, ["Token handler config is wrong. Please check your definition shape."]);
+        super(undefined, "Token handler config is wrong. Please check your definition shape.");
     }
 }
-class TokenHandlerCreateError extends kindHeritage("token-handler-create-error", tokenHandlerKind, Error) {
+class TokenHandlerCreateError extends kindClass(tokenHandlerKind, Error) {
     constructor(error) {
-        super({}, [`Token creation failed with "${EE.informationKind.getValue(error)}".`]);
+        super(undefined, `Token creation failed with "${EE.informationKind.getValue(error)}".`);
     }
 }
 /**
@@ -81,13 +81,13 @@ function createTokenHandler(params) {
             config,
             parseTokenContent,
         }),
-        createOrThrow(payload, params) {
+        async createOrThrow(payload, params) {
             return createToken(payload, params)
                 .then((value) => {
                 if (EE.isLeft(value)) {
                     throw new TokenHandlerCreateError(value);
                 }
-                return value;
+                return unwrap(value);
             });
         },
     });

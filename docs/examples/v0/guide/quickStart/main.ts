@@ -1,4 +1,4 @@
-import { D, DPE } from "@duplojs/utils";
+import { asyncPipe, D, DPE, E } from "@duplojs/utils";
 import { Signer, createTokenHandler } from "@json-web-token/v0";
 
 const tokenHandler = createTokenHandler({
@@ -17,4 +17,12 @@ const token = await tokenHandler.createOrThrow({
 
 // send to client ...
 
-const verifiedToken = await tokenHandler.verify("receive-token");
+const result = await asyncPipe(
+	"receive-token",
+	tokenHandler.verify,
+	E.whenIsRight(
+		({ payload }) => {
+			const userId = payload.userId;
+		},
+	),
+);

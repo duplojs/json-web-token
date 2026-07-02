@@ -1,4 +1,4 @@
-import { D, DPE } from "@duplojs/utils";
+import { D, DPE, E, unwrap } from "@duplojs/utils";
 import { Cipher, Signer, createTokenHandler } from "@json-web-token/v0";
 
 const tokenHandler = createTokenHandler({
@@ -27,7 +27,7 @@ const token = await tokenHandler.createOrThrow(
 
 // send to client ...
 
-const verifiedToken = await tokenHandler.verify("receive-token", {
+const verifiedTokenResult = await tokenHandler.verify("receive-token", {
 	signer: {
 		secret: "my-secret",
 	},
@@ -36,3 +36,8 @@ const verifiedToken = await tokenHandler.verify("receive-token", {
 		publicKey: "public-key",
 	},
 });
+
+if (E.isRight(verifiedTokenResult)) {
+	const verifiedToken = unwrap(verifiedTokenResult);
+	const userId = verifiedToken.payload.userId;
+}

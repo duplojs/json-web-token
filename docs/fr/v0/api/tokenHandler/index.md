@@ -34,8 +34,10 @@ Autrement dit, le but est de construire un contrat clair que l'on peut réutilis
 ```
 
 ::: tip Ce qui se passe ici
-Au moment du `create`, le handler ajoute lui-même les claims standards comme `iat` et `exp`, puis signe le contenu.  
+Au moment du `createOrThrow`, le handler ajoute lui-même les claims standards comme `iat` et `exp`, puis signe le contenu.  
 Au moment du `verify`, il redécode le token, vérifie la signature, puis applique les contrôles de configuration comme l'expiration, l'issuer, le subject ou l'audience.
+
+`verify` retourne un résultat either. En cas de succès, l'information est `token-verified` et la valeur contient le header et le payload décodés.
 :::
 
 ::: tip Pourquoi `createOrThrow` existe ?
@@ -63,10 +65,10 @@ interface TokenHandlerParams {
 
 Le handler retourné expose ensuite quatre méthodes :
 
-- `create`
-- `createOrThrow`
-- `verify`
-- `decode`
+- `create` : crée un token et retourne `token-created` ou une erreur de création.
+- `createOrThrow` : crée directement une chaîne de token, ou throw si la création échoue.
+- `verify` : vérifie la signature et les claims configurés, puis retourne `token-verified` ou une erreur de vérification.
+- `decode` : lit le header et le payload sans vérifier la signature ni les claims, puis retourne `token-decoded` ou une erreur de décodage.
 
 ## Exemple avec custom shapes
 
@@ -78,6 +80,8 @@ Le handler retourné expose ensuite quatre méthodes :
 ::: tip Ce qui se passe ici
 `customPayloadShape` et `customHeaderShape` définissent ce que ton application a le droit de mettre dans le token.  
 Les clés réservées du JWT, comme `exp`, `iat`, `iss`, `sub`, `aud`, `typ` ou `alg`, restent gérées par le handler lui-même.
+
+`decode` lit uniquement le contenu du token. C'est utile pour inspecter, mais ce n'est pas la méthode à utiliser pour faire confiance à un token reçu.
 :::
 
 ## Exemple avec des "creators"
@@ -90,4 +94,6 @@ Les clés réservées du JWT, comme `exp`, `iat`, `iss`, `sub`, `aud`, `typ` ou 
 ::: tip Ce qui se passe ici
 Quand tu passes un `CreateSigner` ou un `CreateCipher` au lieu d'une instance déjà configurée, les paramètres sont déplacés vers `create`, `createOrThrow`, `verify` et `decode`.  
 Cela permet de créer le handler une seule fois, tout en injectant plus tard les secrets, les clés ou d'autres paramètres nécessaires.
+
+Le résultat de succès reste le même : `create` retourne `token-created`, `decode` retourne `token-decoded` et `verify` retourne `token-verified`.
 :::

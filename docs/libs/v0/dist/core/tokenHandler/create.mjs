@@ -40,9 +40,9 @@ function createTokenHandlerCreateMethod(params) {
         return callThen(signer.sign(signingInput), (signature) => {
             const token = `${signingInput}.${signature}`;
             if (cipher !== undefined) {
-                return cipher.encrypt(token);
+                return callThen(cipher.encrypt(token), (token) => EE.right("token-created", token));
             }
-            return token;
+            return EE.right("token-created", token);
         });
     };
 }

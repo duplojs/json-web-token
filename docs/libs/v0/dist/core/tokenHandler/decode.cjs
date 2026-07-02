@@ -36,10 +36,10 @@ function createTokenHandlerDecodeMethod(params) {
             if (EE__namespace.isLeft(decodeResult)) {
                 return decodeResult;
             }
-            return {
+            return EE__namespace.right("token-decoded", {
                 header: decodeResult.header,
                 payload: decodeResult.payload,
-            };
+            });
         });
     };
 }

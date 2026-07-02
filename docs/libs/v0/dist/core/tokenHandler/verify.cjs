@@ -64,10 +64,10 @@ function createTokenHandlerVerifyMethod(params) {
                     < nowInSeconds.nowInSeconds(config.now)) {
                     return EE__namespace.left("expired");
                 }
-                return {
+                return EE__namespace.right("token-verified", {
                     header: decodeResult.header,
                     payload: decodeResult.payload,
-                };
+                });
             });
         });
     };

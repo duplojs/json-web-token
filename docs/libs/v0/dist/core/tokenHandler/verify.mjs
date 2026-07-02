@@ -43,10 +43,10 @@ function createTokenHandlerVerifyMethod(params) {
                     < nowInSeconds(config.now)) {
                     return EE.left("expired");
                 }
-                return {
+                return EE.right("token-verified", {
                     header: decodeResult.header,
                     payload: decodeResult.payload,
-                };
+                });
             });
         });
     };

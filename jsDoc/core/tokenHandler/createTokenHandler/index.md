@@ -13,7 +13,7 @@
 
 ### Example
 ```ts
-{@include core/tokenHandler/createTokenHandler/example.ts[1,39]}
+{@include core/tokenHandler/createTokenHandler/example.ts[1,42]}
 ```
 
 @remarks

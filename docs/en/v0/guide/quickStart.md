@@ -32,3 +32,5 @@ deno add npm:@duplojs/json-web-token@0 npm:@duplojs/utils@1
 // @version: 0
 <!--@include: @/examples/v0/guide/quickStart/main.ts-->
 ```
+
+`createOrThrow` returns the token string directly. `verify` returns an either result, so a received token can be rejected without throwing for normal authentication failures.

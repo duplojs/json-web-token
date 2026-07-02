@@ -15,10 +15,10 @@ function createTokenHandlerDecodeMethod(params) {
             if (EE.isLeft(decodeResult)) {
                 return decodeResult;
             }
-            return {
+            return EE.right("token-decoded", {
                 header: decodeResult.header,
                 payload: decodeResult.payload,
-            };
+            });
         });
     };
 }

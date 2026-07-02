@@ -8,8 +8,8 @@ interface CreateTokenHandlerDecodeMethodParams {
 }
 export declare function createTokenHandlerDecodeMethod(params: CreateTokenHandlerDecodeMethodParams): (token: string, params?: {
     cipher?: object;
-}) => Promise<{
+}) => Promise<EE.Right<"token-decoded", {
     header: Record<string, unknown>;
     payload: Record<string, unknown>;
-} | EE.Left<"token-format"> | EE.Left<"header-decode-error"> | EE.Left<"header-parse-error", DP.DataParserError> | EE.Left<"payload-decode-error"> | EE.Left<"payload-parse-error", DP.DataParserError>>;
+}> | EE.Left<"token-format"> | EE.Left<"header-decode-error"> | EE.Left<"header-parse-error", DP.DataParserError> | EE.Left<"payload-decode-error"> | EE.Left<"payload-parse-error", DP.DataParserError>>;
 export {};
