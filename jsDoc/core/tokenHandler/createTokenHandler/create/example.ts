@@ -1,4 +1,4 @@
-import { asyncPipe, D, DPE, E } from "@duplojs/utils";
+import { D, DPE, E, unwrap } from "@duplojs/utils";
 import { Signer, createTokenHandler } from "@duplojs/json-web-token";
 
 const tokenHandler = createTokenHandler({
@@ -6,21 +6,17 @@ const tokenHandler = createTokenHandler({
 	signer: Signer.createHS256({
 		secret: "my-secret",
 	}),
-	issuer: "duplo-app",
-	audience: ["web"],
 	customPayloadShape: {
 		userId: DPE.string(),
-		role: DPE.literal("admin"),
 	},
 	customHeaderShape: {
 		kid: DPE.string().optional(),
 	},
 });
 
-const token = await tokenHandler.createOrThrow(
+const result = await tokenHandler.create(
 	{
 		userId: "1",
-		role: "admin",
 	},
 	{
 		header: {
@@ -29,14 +25,6 @@ const token = await tokenHandler.createOrThrow(
 	},
 );
 
-// send to client ...
-
-const result = await asyncPipe(
-	"receive-token",
-	tokenHandler.verify,
-	E.whenIsRight(
-		({ payload }) => {
-			const userId = payload.userId;
-		},
-	),
-);
+if (E.isRight(result)) {
+	const token = unwrap(result);
+}

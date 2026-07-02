@@ -10,30 +10,17 @@ const tokenHandler = createTokenHandler({
 	audience: ["web"],
 	customPayloadShape: {
 		userId: DPE.string(),
-		role: DPE.literal("admin"),
-	},
-	customHeaderShape: {
-		kid: DPE.string().optional(),
 	},
 });
 
-const token = await tokenHandler.createOrThrow(
-	{
-		userId: "1",
-		role: "admin",
-	},
-	{
-		header: {
-			kid: "main",
-		},
-	},
-);
-
-// send to client ...
-
 const result = await asyncPipe(
-	"receive-token",
-	tokenHandler.verify,
+	"received-token",
+	(token) => tokenHandler.verify(
+		token,
+		{
+			tolerance: D.createTime(30, "second"),
+		},
+	),
 	E.whenIsRight(
 		({ payload }) => {
 			const userId = payload.userId;

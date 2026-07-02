@@ -134,6 +134,10 @@ export interface TokenHandler<
 	GenericCustomPayload extends Record<string, unknown> = {},
 	GenericCustomHeader extends Record<string, unknown> = {},
 >extends Kind<typeof tokenHandlerKind.definition> {
+
+	/**
+	 * {@include core/tokenHandler/createTokenHandler/verify/index.md}
+	 */
 	verify(
 		token: string,
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
@@ -150,6 +154,10 @@ export interface TokenHandler<
 		| EE.Left<"audience-invalid">
 		| EE.Left<"expired">
 	>;
+
+	/**
+	 * {@include core/tokenHandler/createTokenHandler/decode/index.md}
+	 */
 	decode(
 		token: string,
 		...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>
@@ -161,6 +169,10 @@ export interface TokenHandler<
 		| EE.Left<"payload-decode-error">
 		| EE.Left<"payload-parse-error", DP.DataParserError>
 	>;
+
+	/**
+	 * {@include core/tokenHandler/createTokenHandler/create/index.md}
+	 */
 	create(
 		payload: GenericCustomPayload,
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
@@ -169,6 +181,10 @@ export interface TokenHandler<
 		| EE.Left<"header-parse-error", DP.DataParserError>
 		| EE.Left<"payload-parse-error", DP.DataParserError>
 	>;
+
+	/**
+	 * {@include core/tokenHandler/createTokenHandler/createOrThrow/index.md}
+	 */
 	createOrThrow(
 		payload: GenericCustomPayload,
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>

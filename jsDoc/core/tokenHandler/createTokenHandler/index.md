@@ -13,12 +13,14 @@
 
 ### Example
 ```ts
-{@include core/tokenHandler/createTokenHandler/example.ts[4,34]}
+{@include core/tokenHandler/createTokenHandler/example.ts[1,39]}
 ```
 
 @remarks
 - `verify` also checks issuer, subject, audience and expiration.
-- `createOrThrow` throws when token creation returns a left value.
+- `create`, `decode` and `verify` return either values.
+- Successful results use `token-created`, `token-decoded` and `token-verified`.
+- `createOrThrow` unwraps `token-created` or throws when token creation returns a left value.
 - Creator inputs move signer and cipher params to `create`, `createOrThrow`, `decode` and `verify`.
 - Custom shapes cannot redefine reserved JWT keys.
 
