@@ -25,7 +25,7 @@ export function createTokenHandlerCreateMethod(
 			cipher?: object;
 		},
 	): Promise<
-		| string
+		| EE.Right<"token-created", string>
 		| EE.Left<"header-parse-error", DP.DataParserError>
 		| EE.Left<"payload-parse-error", DP.DataParserError>
 		> {
@@ -68,10 +68,13 @@ export function createTokenHandlerCreateMethod(
 				const token = `${signingInput}.${signature}`;
 
 				if (cipher !== undefined) {
-					return cipher.encrypt(token);
+					return callThen(
+						cipher.encrypt(token),
+						(token) => EE.right("token-created", token),
+					);
 				}
 
-				return token;
+				return EE.right("token-created", token);
 			},
 		);
 	};

@@ -1,4 +1,4 @@
-import { unwrap, type Kind, type SimplifyTopLevel, kindHeritage, type RemoveKind, forward } from "@duplojs/utils";
+import { unwrap, type Kind, type SimplifyTopLevel, type RemoveKind, forward, kindClass } from "@duplojs/utils";
 import type * as DD from "@duplojs/utils/date";
 import * as EE from "@duplojs/utils/either";
 import * as DP from "@duplojs/utils/dataParser";
@@ -138,7 +138,7 @@ export interface TokenHandler<
 		token: string,
 		...args: ComputeParams<VerifyParams<GenericTokenHandlerConfig>>
 	): Promise<
-		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
+		| EE.Right<"token-verified", SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>>
 		| EE.Left<"token-format">
 		| EE.Left<"header-decode-error">
 		| EE.Left<"header-parse-error", DP.DataParserError>
@@ -154,7 +154,7 @@ export interface TokenHandler<
 		token: string,
 		...args: ComputeParams<DecodeParams<GenericTokenHandlerConfig>>
 	): Promise<
-		| SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>
+		| EE.Right<"token-decoded", SimplifyTopLevel<DecodeOutput<GenericTokenHandlerConfig, GenericCustomPayload, GenericCustomHeader>>>
 		| EE.Left<"token-format">
 		| EE.Left<"header-decode-error">
 		| EE.Left<"header-parse-error", DP.DataParserError>
@@ -165,7 +165,7 @@ export interface TokenHandler<
 		payload: GenericCustomPayload,
 		...args: ComputeParams<CreateParams<GenericTokenHandlerConfig, GenericCustomHeader>>
 	): Promise<
-		| string
+		| EE.Right<"token-created", string>
 		| EE.Left<"header-parse-error", DP.DataParserError>
 		| EE.Left<"payload-parse-error", DP.DataParserError>
 	>;
@@ -175,23 +175,21 @@ export interface TokenHandler<
 	): Promise<string>;
 }
 
-export class TokenHandlerWrongConfig extends kindHeritage(
-	"token-handler-wrong-config",
+export class TokenHandlerWrongConfig extends kindClass(
 	tokenHandlerKind,
 	Error,
 ) {
 	public constructor(error: DP.DataParserError) {
-		super({}, ["Token handler config is wrong. Please check your definition shape."]);
+		super(undefined, "Token handler config is wrong. Please check your definition shape.");
 	}
 }
 
-export class TokenHandlerCreateError extends kindHeritage(
-	"token-handler-create-error",
+export class TokenHandlerCreateError extends kindClass(
 	tokenHandlerKind,
 	Error,
 ) {
 	public constructor(error: EE.Left) {
-		super({}, [`Token creation failed with "${EE.informationKind.getValue(error)}".`]);
+		super(undefined, `Token creation failed with "${EE.informationKind.getValue(error)}".`);
 	}
 }
 
@@ -300,13 +298,13 @@ export function createTokenHandler<
 				config,
 				parseTokenContent,
 			}),
-			createOrThrow(payload: object, params?: object) {
+			async createOrThrow(payload: object, params?: object) {
 				return createToken(payload, params)
 					.then((value) => {
 						if (EE.isLeft(value)) {
 							throw new TokenHandlerCreateError(value);
 						}
-						return value;
+						return unwrap(value);
 					});
 			},
 		} satisfies Record<keyof RemoveKind<TokenHandler>, any>,

@@ -24,10 +24,10 @@ export function createTokenHandlerVerifyMethod(
 			tolerance?: DD.TheTime;
 		},
 	): Promise<
-		| {
+		| EE.Right<"token-verified", {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
-		}
+		}>
 		| EE.Left<"token-format">
 		| EE.Left<"header-decode-error">
 		| EE.Left<"header-parse-error", DP.DataParserError>
@@ -104,10 +104,13 @@ export function createTokenHandlerVerifyMethod(
 							return EE.left("expired");
 						}
 
-						return {
-							header: decodeResult.header,
-							payload: decodeResult.payload,
-						};
+						return EE.right(
+							"token-verified",
+							{
+								header: decodeResult.header,
+								payload: decodeResult.payload,
+							},
+						);
 					},
 				);
 			},

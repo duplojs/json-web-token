@@ -22,7 +22,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		await expect(decode("header.payload.signature")).resolves.toEqual({
+		await expect(decode("header.payload.signature")).resolves.toEqual(E.right("token-decoded", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -31,7 +31,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 				exp: 1,
 				iat: 1,
 			},
-		});
+		}));
 		expect(parseTokenContent).toHaveBeenCalledWith("header", "payload");
 	});
 
@@ -91,7 +91,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		await expect(decode("encrypted-token")).resolves.toEqual({
+		await expect(decode("encrypted-token")).resolves.toEqual(E.right("token-decoded", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -101,7 +101,7 @@ describe("createTokenHandlerDecodeMethod", () => {
 				iat: 1,
 				sub: "1",
 			},
-		});
+		}));
 		expect(parseTokenContent).toHaveBeenCalledWith("header", "payload");
 	});
 });

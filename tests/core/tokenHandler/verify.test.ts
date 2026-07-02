@@ -181,9 +181,9 @@ describe("createTokenHandlerVerifyMethod", () => {
 			verify("header.payload.c2ln", {
 				tolerance: D.createTime(1, "minute"),
 			}),
-		).resolves.toEqual(createDecodedPayload({
+		).resolves.toEqual(E.right("token-verified", createDecodedPayload({
 			exp: Math.floor(D.toTimestamp(now) / 1000) - 30,
-		}));
+		})));
 	});
 
 	it("verifies a token with async cipher and signer", async() => {
@@ -211,7 +211,7 @@ describe("createTokenHandlerVerifyMethod", () => {
 			parseTokenContent: parseTokenContent as never,
 		});
 
-		await expect(verify("encrypted-token")).resolves.toEqual(createDecodedPayload());
+		await expect(verify("encrypted-token")).resolves.toEqual(E.right("token-verified", createDecodedPayload()));
 		expect(parseTokenContent).toHaveBeenCalledWith("header", "payload");
 	});
 });

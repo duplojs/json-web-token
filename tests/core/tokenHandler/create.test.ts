@@ -133,7 +133,7 @@ describe("createTokenHandlerCreateMethod", () => {
 					},
 				},
 			),
-		).resolves.toBe(`${encodedHeader}.${encodedPayload}.azerty`);
+		).resolves.toEqual(E.right("token-created", `${encodedHeader}.${encodedPayload}.azerty`));
 		expect(headerParser.parse).toHaveBeenCalledWith({
 			kid: "1",
 			typ: "JWT",
@@ -205,7 +205,7 @@ describe("createTokenHandlerCreateMethod", () => {
 					},
 				},
 			),
-		).resolves.toBe(`encrypted:secure:${token}`);
+		).resolves.toEqual(E.right("token-created", `encrypted:secure:${token}`));
 		expect(sign).toHaveBeenCalledWith(`secret:${encodedHeader}.${encodedPayload}`);
 		expect(encrypt).toHaveBeenCalledWith(`secure:${token}`);
 	});

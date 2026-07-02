@@ -1,4 +1,4 @@
-import { D, DPE, E } from "@duplojs/utils";
+import { asserts, D, DPE, E, unwrap } from "@duplojs/utils";
 import { Cipher, Signer, TokenHandlerCreateError, TokenHandlerWrongConfig, createTokenHandler, encodeBase64Url } from "@scripts";
 
 describe("createTokenHandler", () => {
@@ -58,7 +58,7 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create(
+		const tokenResult = await tokenHandler.create(
 			{
 				id: "1",
 			},
@@ -68,9 +68,12 @@ describe("createTokenHandler", () => {
 				},
 			},
 		);
+		asserts(tokenResult, E.isRight);
+		expect(tokenResult).toEqual(E.right("token-created", expect.any(String)));
+		const token = unwrap(tokenResult);
 
-		await expect(tokenHandler.decode(token as string)).resolves.toEqual(expected);
-		await expect(tokenHandler.verify(token as string)).resolves.toEqual(expected);
+		await expect(tokenHandler.decode(token)).resolves.toEqual(E.right("token-decoded", expected));
+		await expect(tokenHandler.verify(token)).resolves.toEqual(E.right("token-verified", expected));
 	});
 
 	it("returns the header parse error from create", async() => {
@@ -231,7 +234,9 @@ describe("createTokenHandler", () => {
 				},
 			},
 		);
-		const token = tokenResult as string;
+		asserts(tokenResult, E.isRight);
+		expect(tokenResult).toEqual(E.right("token-created", expect.any(String)));
+		const token = unwrap(tokenResult);
 
 		await expect(
 			tokenHandler.decode(token, {
@@ -239,7 +244,7 @@ describe("createTokenHandler", () => {
 					prefix: "prefix",
 				},
 			}),
-		).resolves.toEqual(expected);
+		).resolves.toEqual(E.right("token-decoded", expected));
 		await expect(
 			tokenHandler.verify(token, {
 				signer: {
@@ -249,7 +254,7 @@ describe("createTokenHandler", () => {
 					prefix: "prefix",
 				},
 			}),
-		).resolves.toEqual(expected);
+		).resolves.toEqual(E.right("token-verified", expected));
 		expect(sign).toHaveBeenCalledTimes(1);
 		expect(verify).toHaveBeenCalledTimes(1);
 		expect(encrypt).toHaveBeenCalledTimes(1);

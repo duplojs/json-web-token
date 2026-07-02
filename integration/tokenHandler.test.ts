@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { setCurrentWorkingDirectory } from "@duplojs/server-utils";
-import { asserts, D, DPE, E, isType } from "@duplojs/utils";
+import { asserts, D, DPE, E, unwrap } from "@duplojs/utils";
 import { Cipher, Signer, createTokenHandler, decodeBase64Url, decodeText, encodeBase64Url } from "@duplojs/json-web-token";
 
 describe("createTokenHandler", () => {
@@ -80,7 +80,7 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create(
+		const tokenResult = await tokenHandler.create(
 			{
 				id: "1",
 				role: "admin",
@@ -91,9 +91,10 @@ describe("createTokenHandler", () => {
 				},
 			},
 		);
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
-		expect(await tokenHandler.decode(token)).toEqual({
+		expect(await tokenHandler.decode(token)).toEqual(E.right("token-decoded", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -108,8 +109,8 @@ describe("createTokenHandler", () => {
 				id: "1",
 				role: "admin",
 			},
-		});
-		expect(await tokenHandler.verify(token)).toEqual({
+		}));
+		expect(await tokenHandler.verify(token)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -124,7 +125,7 @@ describe("createTokenHandler", () => {
 				id: "1",
 				role: "admin",
 			},
-		});
+		}));
 	});
 
 	it("creates verifies and decodes a hs512 token with rsa oaep", async() => {
@@ -142,12 +143,13 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create({
+		const tokenResult = await tokenHandler.create({
 			id: "42",
 		});
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
-		expect(await tokenHandler.decode(token)).toEqual({
+		expect(await tokenHandler.decode(token)).toEqual(E.right("token-decoded", {
 			header: {
 				typ: "JWT",
 				alg: "HS512",
@@ -160,8 +162,8 @@ describe("createTokenHandler", () => {
 				iat: issuedAt,
 				id: "42",
 			},
-		});
-		expect(await tokenHandler.verify(token)).toEqual({
+		}));
+		expect(await tokenHandler.verify(token)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "HS512",
@@ -174,7 +176,7 @@ describe("createTokenHandler", () => {
 				iat: issuedAt,
 				id: "42",
 			},
-		});
+		}));
 	});
 
 	it("creates and verifies a hs256 token with rsa oaep 256", async() => {
@@ -192,12 +194,13 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create({
+		const tokenResult = await tokenHandler.create({
 			id: "91",
 		});
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
-		expect(await tokenHandler.verify(token)).toEqual({
+		expect(await tokenHandler.verify(token)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -210,7 +213,7 @@ describe("createTokenHandler", () => {
 				iat: issuedAt,
 				id: "91",
 			},
-		});
+		}));
 	});
 
 	it("creates and verifies a token with a custom signer from factory", async() => {
@@ -229,12 +232,13 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create({
+		const tokenResult = await tokenHandler.create({
 			id: "12",
 		});
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
-		expect(await tokenHandler.verify(token)).toEqual({
+		expect(await tokenHandler.verify(token)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "CUSTOM",
@@ -247,7 +251,7 @@ describe("createTokenHandler", () => {
 				iat: issuedAt,
 				id: "12",
 			},
-		});
+		}));
 	});
 
 	it("creates and verifies a token with a custom signer and custom cipher from factories", async() => {
@@ -267,13 +271,14 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create({
+		const tokenResult = await tokenHandler.create({
 			id: "23",
 			mode: "custom",
 		});
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
-		expect(await tokenHandler.verify(token)).toEqual({
+		expect(await tokenHandler.verify(token)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "CUSTOM",
@@ -287,7 +292,7 @@ describe("createTokenHandler", () => {
 				id: "23",
 				mode: "custom",
 			},
-		});
+		}));
 	});
 
 	it("returns expired after the max age", async() => {
@@ -310,10 +315,11 @@ describe("createTokenHandler", () => {
 				id: DPE.string(),
 			},
 		});
-		const token = await createHandler.create({
+		const tokenResult = await createHandler.create({
 			id: "1",
 		});
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
 		await expectLeftInformation(
 			verifyHandler.verify(token),
@@ -336,7 +342,7 @@ describe("createTokenHandler", () => {
 			},
 		});
 
-		const token = await tokenHandler.create(
+		const tokenResult = await tokenHandler.create(
 			{
 				id: "09",
 			},
@@ -347,7 +353,8 @@ describe("createTokenHandler", () => {
 				cipher: cipherKeys,
 			},
 		);
-		asserts(token, isType("string"));
+		asserts(tokenResult, E.isRight);
+		const token = unwrap(tokenResult);
 
 		expect(await tokenHandler.verify(
 			token,
@@ -357,7 +364,7 @@ describe("createTokenHandler", () => {
 				},
 				cipher: cipherKeys,
 			},
-		)).toEqual({
+		)).toEqual(E.right("token-verified", {
 			header: {
 				typ: "JWT",
 				alg: "HS256",
@@ -370,7 +377,7 @@ describe("createTokenHandler", () => {
 				iat: issuedAt,
 				id: "09",
 			},
-		});
+		}));
 		await expectLeftInformation(
 			tokenHandler.verify(token, {
 				signer: {

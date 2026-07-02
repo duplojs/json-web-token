@@ -20,10 +20,10 @@ export function createTokenHandlerDecodeMethod(
 			cipher?: object;
 		},
 	): Promise<
-		| {
+		| EE.Right<"token-decoded", {
 			header: Record<string, unknown>;
 			payload: Record<string, unknown>;
-		}
+		}>
 		| EE.Left<"token-format">
 		| EE.Left<"header-decode-error">
 		| EE.Left<"header-parse-error", DP.DataParserError>
@@ -49,10 +49,13 @@ export function createTokenHandlerDecodeMethod(
 					return decodeResult;
 				}
 
-				return {
-					header: decodeResult.header,
-					payload: decodeResult.payload,
-				};
+				return EE.right(
+					"token-decoded",
+					{
+						header: decodeResult.header,
+						payload: decodeResult.payload,
+					},
+				);
 			},
 		);
 	};
